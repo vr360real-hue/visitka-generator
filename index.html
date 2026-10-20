@@ -119,16 +119,16 @@ input[type=color]{padding:2px;height:36px;cursor:pointer}
 <div class="section">
 <h2>6. Цвета кнопок</h2>
 <div class="row3">
-<div><label>Динамичные: фон</label><input type="color" id="dynBg" value="#f5efed"></div>
-<div><label>Динамичные: текст</label><input type="color" id="dynText" value="#333333"></div>
+<div><label>Динамичные: фон</label><input type="color" id="dynBg" value="#ecf0ef"></div>
+<div><label>Динамичные: текст</label><input type="color" id="dynText" value="#07372b"></div>
 </div>
 <div class="row3">
-<div><label>Статичные: фон</label><input type="color" id="statBg" value="#333333"></div>
+<div><label>Статичные: фон</label><input type="color" id="statBg" value="#24584b"></div>
 <div><label>Статичные: текст</label><input type="color" id="statText" value="#ffffff"></div>
 </div>
 <div class="row3">
-<div><label>Звук/управление: фон</label><input type="color" id="navBg" value="#000000"></div>
-<div><label>Звук/управление: текст</label><input type="color" id="navText" value="#ffffff"></div>
+<div><label>Звук/управление: фон</label><input type="color" id="navBg" value="#07372b"></div>
+<div><label>Звук/управление: текст</label><input type="color" id="navText" value="#99d6cf"></div>
 </div>
 </div>
 
@@ -138,6 +138,15 @@ input[type=color]{padding:2px;height:36px;cursor:pointer}
 <textarea id="photos" style="min-height:160px" placeholder="https://...
 https://..."></textarea>
 <div class="check" style="margin-top:10px"><input type="checkbox" id="smartRandom" checked><label for="smartRandom" style="margin:0;cursor:pointer">Умный рандом (без повторов до конца цикла)</label></div>
+</div>
+
+<div class="section">
+<h2>8. Видео</h2>
+<div><label>Ссылки на Rutube (по одной на строку)</label>
+<textarea id="videosRutube" style="min-height:80px" placeholder="https://rutube.ru/video/7f9c43d7b1170c1590c8273ebd15d8c8/&#10;или просто ID: 7f9c43d7b1170c1590c8273ebd15d8c8"></textarea></div>
+<div class="hint">Генератор сам вытащит ID и сделает правильную ссылку для встраивания.</div>
+<div style="margin-top:10px"><label>Другие видео (прямые ссылки для iframe, например ВК)</label>
+<textarea id="videosOther" style="min-height:80px" placeholder="https://vk.com/video_ext.php?..."></textarea></div>
 </div>
 
 <button type="submit" class="btn-gen">СГЕНЕРИРОВАТЬ</button>
@@ -203,12 +212,25 @@ function generate(){
             if(p.length>=2) tourLocations.push({name:p[0].trim(),url:p.slice(1).join('|').trim()});
         });
     }
-    var dynBg=val('dynBg')||'#f5efed';
-    var dynText=val('dynText')||'#333333';
-    var statBg=val('statBg')||'#333333';
+    
+    // Обработка видео
+    var rutubeLinks = val('videosRutube').split('\n').map(function(l){return l.trim();}).filter(function(l){return l;});
+    var otherLinks = val('videosOther').split('\n').map(function(l){return l.trim();}).filter(function(l){return l;});
+
+    var rutubeEmbeds = rutubeLinks.map(function(l) {
+        var match = l.match(/([a-f0-9]{32})/);
+        if (match) return 'https://rutube.ru/embed/' + match[1] + '/';
+        if (l.indexOf('rutube.ru/embed/') !== -1) return l;
+        return l;
+    });
+    var allVideos = rutubeEmbeds.concat(otherLinks);
+
+    var dynBg=val('dynBg')||'#ecf0ef';
+    var dynText=val('dynText')||'#07372b';
+    var statBg=val('statBg')||'#24584b';
     var statText=val('statText')||'#ffffff';
-    var navBg=val('navBg')||'#000000';
-    var navText=val('navText')||'#ffffff';
+    var navBg=val('navBg')||'#07372b';
+    var navText=val('navText')||'#99d6cf';
     var photos=val('photos').split('\n').map(function(l){return l.trim();}).filter(function(l){return l && l.indexOf('http')===0;});
     var smartRandom=document.getElementById('smartRandom').checked;
 
@@ -231,6 +253,9 @@ function generate(){
     if(instaLink) dynArr.push({label:'ИНСТАГРАМ',href:instaLink,target:'_blank'});
     if(vkLink) dynArr.push({label:'В КОНТАКТЕ',href:vkLink,target:'_blank'});
     if(okLink) dynArr.push({label:'ОДНОКЛАССНИКИ',href:okLink,target:'_blank'});
+    
+    // Добавляем кнопку Видео, если есть ролики
+    if (allVideos.length > 0) dynArr.push({label:'ВИДЕО',onclick:'showVideo()'});
 
     var dynJs='[\n'+dynArr.map(function(b){
         var parts=['label:'+jsStr(b.label)];
@@ -365,6 +390,103 @@ function generate(){
         function enter3DMode() {}
         function exit3DMode() {}`;
 
+    var videoJs = '';
+    if (allVideos.length > 0) {
+        videoJs = `
+        var videoEmbedUrls = ${JSON.stringify(allVideos)};
+        var videoScroll = document.getElementById('videoScroll');
+        var videoItems = [];
+        var videoWidget = document.getElementById('videoWidget');
+
+        function buildVideoSlider() {
+            if (!videoScroll) return;
+            videoScroll.innerHTML = '';
+            videoEmbedUrls.forEach(function(src, idx) {
+                var item = document.createElement('div');
+                item.className = '_video-item';
+                item.dataset.index = idx;
+                var iframe = document.createElement('iframe');
+                iframe.src = '';
+                iframe.allow = 'autoplay; fullscreen';
+                iframe.allowFullscreen = true;
+                item.appendChild(iframe);
+                videoScroll.appendChild(item);
+            });
+            videoItems = videoScroll.querySelectorAll('._video-item');
+            if (window.IntersectionObserver) {
+                var observer = new IntersectionObserver(function(entries) {
+                    entries.forEach(function(entry) {
+                        var item = entry.target;
+                        var iframe = item.querySelector('iframe');
+                        if (entry.isIntersecting) {
+                            var idx = parseInt(item.dataset.index);
+                            if (!isNaN(idx) && iframe.src !== videoEmbedUrls[idx]) {
+                                iframe.src = videoEmbedUrls[idx];
+                            }
+                        } else {
+                            if (iframe.src) iframe.src = '';
+                        }
+                    });
+                }, { threshold: 0.5 });
+                videoItems.forEach(function(item) { observer.observe(item); });
+            }
+        }
+
+        function clearAllVideos() {
+            if (typeof videoItems === 'undefined' || !videoItems) return;
+            videoItems.forEach(function(item) {
+                var iframe = item.querySelector('iframe');
+                if (iframe) iframe.src = '';
+            });
+        }
+
+        function scrollVideo(direction) {
+            if (!videoItems.length) return;
+            var container = videoScroll;
+            var itemWidth = container.clientWidth;
+            var currentScroll = container.scrollLeft;
+            var targetScroll = currentScroll + direction * itemWidth;
+            var maxScroll = container.scrollWidth - container.clientWidth;
+            if (targetScroll < 0) targetScroll = 0;
+            if (targetScroll > maxScroll) targetScroll = maxScroll;
+            container.scrollTo({ left: targetScroll, behavior: 'smooth' });
+        }
+        
+        if(document.getElementById('videoPrev')){
+            document.getElementById('videoPrev').addEventListener('click', function() { scrollVideo(-1); });
+            document.getElementById('videoNext').addEventListener('click', function() { scrollVideo(1); });
+        }
+        
+        function showVideo() {
+            hideAllWidgets();
+            videoWidget.classList.add('active-widget');
+            document.getElementById('mainHeader').style.display = 'flex';
+            document.getElementById('mainSubtitle').style.display = 'block';
+            if (typeof stopRadioIfPlaying === 'function') stopRadioIfPlaying();
+            resetAutoMain();
+            if (videoItems.length === 0) buildVideoSlider();
+            
+            setTimeout(function(){
+                if(videoItems.length > 0) {
+                    var firstIframe = videoItems[0].querySelector('iframe');
+                    if (firstIframe && !firstIframe.src) {
+                        firstIframe.src = videoEmbedUrls[0];
+                    }
+                }
+            }, 100);
+        }
+        window.showVideo = showVideo;
+        window.clearAllVideos = clearAllVideos;
+        `;
+    } else {
+        videoJs = `
+        function showVideo() {}
+        window.showVideo = showVideo;
+        function clearAllVideos() {}
+        window.clearAllVideos = clearAllVideos;
+        `;
+    }
+
     var headPart = `<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -396,7 +518,7 @@ function generate(){
         ._s { font-size:9px; color:#777; text-align:center; background:#fff; letter-spacing:0.5px; padding:0; height:16px; line-height:16px; flex-shrink:0; width:100%; border-bottom:1px solid #e0e0e0; }
 
         ._mw { width:100%; flex:1 1 auto; position:relative; display:flex; flex-direction:column; overflow:hidden; border-radius:0; margin:0; background:transparent; }
-        ._mw ._m1, ._mw ._g { display:none; flex-direction:column; width:100%; height:100%; background:#fff; border-radius:0; overflow:hidden; flex:1 0 100%; }
+        ._mw ._m1, ._mw ._g, ._mw ._v { display:none; flex-direction:column; width:100%; height:100%; background:#fff; border-radius:0; overflow:hidden; flex:1 0 100%; }
         ._mw .active-widget { display:flex !important; }
 
         ._mw ._m1 ._map-wrap { flex:1; position:relative; overflow:hidden; }
@@ -415,6 +537,16 @@ function generate(){
         .slider-dots::-webkit-scrollbar { display:none; }
         .slider-dot { flex:0 0 auto; width:6px; height:6px; border-radius:50%; background:rgba(0,0,0,0.25); cursor:pointer; transition:all .2s ease; pointer-events:auto; }
         .slider-dot.active { background:${dynBg}; width:18px; border-radius:9px; }
+
+        ._v { background:#000; position:relative; }
+        ._video-scroll { width:100%; height:100%; overflow-x:auto; overflow-y:hidden; display:flex; flex-wrap:nowrap; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; scroll-behavior:smooth; background:#000; position:relative; }
+        ._video-item { min-width:100%; height:100%; scroll-snap-align:start; position:relative; overflow:hidden; background:#000; display:flex; align-items:center; justify-content:center; }
+        ._video-item iframe { width:100%; height:100%; border:0; display:block; object-fit:contain; background:#000; }
+        .video-btn { position:absolute; top:50%; transform:translateY(-50%); background:rgba(0,0,0,0.7); color:#fff; border:none; width:36px; height:36px; border-radius:50%; cursor:pointer; z-index:20; font-size:22px; display:flex; align-items:center; justify-content:center; transition:background 0.2s, transform 0.2s; backdrop-filter:blur(2px); padding:0; line-height:1; }
+        .video-btn:active { background:rgba(0,0,0,0.9); transform:translateY(-50%) scale(0.92); }
+        .video-prev { left:8px; }
+        .video-next { right:8px; }
+        ._v ._map-back { background:#000; border-top:1px solid #333; }
 
         ._secondPanel { flex:0 1 auto; max-height:50%; overflow:hidden; display:flex; flex-direction:column; background:transparent; transition:all 0.3s ease; }
         ._secondPanel.hidden-panel { display:none !important; }
@@ -491,6 +623,15 @@ function generate(){
                     </div>
                 </div>
             </div>
+
+            ${allVideos.length > 0 ? `<div class="_v" id="videoWidget">
+                <div class="_video-scroll" id="videoScroll"></div>
+                <button class="video-btn video-prev" id="videoPrev">‹</button>
+                <button class="video-btn video-next" id="videoNext">›</button>
+                <div class="_map-back">
+                    <button class="btn-static" onclick="showGallery()">НАЗАД</button>
+                </div>
+            </div>` : ''}
         </div>
     </div>
 </div>
@@ -519,6 +660,7 @@ function generate(){
 
         var mapWidget = document.getElementById('mapWidget');
         var galleryBlock = document.getElementById('galleryBlock');
+        var videoWidget = document.getElementById('videoWidget');
         var secondPanel = document.getElementById('secondPanel');
         var toggleBtn = document.getElementById('controlsToggleBtn');
         var callBtn = document.getElementById('callBtn');
@@ -527,7 +669,7 @@ function generate(){
         var is3DMode = false;
 
         function hideAllWidgets() {
-            var arr = [mapWidget, galleryBlock];
+            var arr = [mapWidget, galleryBlock, videoWidget];
             arr.forEach(function(w) { if (w) w.classList.remove('active-widget'); });
         }
 
@@ -538,6 +680,7 @@ function generate(){
             document.getElementById('mainSubtitle').style.display = 'block';
             if (is3DMode && typeof exit3DMode === 'function') exit3DMode();
             resetAutoMain();
+            if (typeof clearAllVideos === 'function') clearAllVideos();
         }
 
         function showMap() {
@@ -547,6 +690,7 @@ function generate(){
             resetAutoMain();
             document.getElementById('mainHeader').style.display = 'flex';
             document.getElementById('mainSubtitle').style.display = 'block';
+            if (typeof clearAllVideos === 'function') clearAllVideos();
         }
 
         function toggleControls() {
@@ -668,6 +812,8 @@ function generate(){
             });
         }
         buildNormalButtons();
+
+        ${videoJs}
 
         var audioPlayer = null;
         var isMusicMuted = true;
