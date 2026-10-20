@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Генератор визиток</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f4f6f8;color:#222;padding:20px;margin:0}
+.wrap{max-width:1000px;margin:0 auto}
+h1{font-size:22px;margin-bottom:8px}
+.sub{color:#666;font-size:14px;margin-bottom:20px}
+.section{background:#fff;border-radius:8px;padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.section h2{font-size:15px;margin-bottom:12px;color:#333;border-bottom:1px solid #eee;padding-bottom:8px}
+label{display:block;font-size:12px;color:#555;margin:8px 0 4px;font-weight:600}
+input[type=text],input[type=color],textarea,select{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit;background:#fff;color:#222}
+textarea{resize:vertical;min-height:60px}
+input[type=color]{padding:2px;height:36px;cursor:pointer}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
+@media(max-width:700px){.row,.row3{grid-template-columns:1fr}}
+.btn-gen{display:block;width:100%;padding:14px;background:#24584b;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;margin-top:10px;letter-spacing:1px}
+.btn-gen:hover{background:#1a4137}
+.actions{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+.actions button{flex:1;padding:12px;border:none;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:.5px}
+.btn-copy{background:#3c8dbc;color:#fff}
+.btn-dl{background:#5cb85c;color:#fff}
+.btn-copy:hover{background:#3278a3}
+.btn-dl:hover{background:#4cae4c}
+#output{min-height:400px;font-family:Consolas,Monaco,monospace;font-size:11px;white-space:pre;overflow-wrap:normal;overflow-x:auto}
+.check{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:13px;color:#333;cursor:pointer}
+.check input{width:auto;height:16px}
+.hint{font-size:11px;color:#888;margin-top:4px;line-height:1.4}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Генератор визиток</h1>
+<div class="sub">Заполни поля → СГЕНЕРИРОВАТЬ → СКАЧАТЬ index.html</div>
+
+<form id="form" onsubmit="event.preventDefault();generate();">
+
+<div class="section">
+<h2>1. Основное</h2>
+<div class="row">
+<div><label>Название (шапка)</label><input type="text" id="name" value="НАЗВАНИЕ ОБЪЕКТА"></div>
+<div><label>Подзаголовок</label><input type="text" id="subtitle" value="ТИП ОБЪЕКТА, ГОРОД"></div>
+</div>
+<div class="row">
+<div><label>URL логотипа (OG image)</label><input type="text" id="ogImage" value=""></div>
+<div><label>URL сайта (OG url)</label><input type="text" id="ogUrl" value="https://cz60182.tw1.ru/OBJECT/index.html"></div>
+</div>
+<div class="row">
+<div><label>Домен для защиты</label><input type="text" id="allowedDomain" value="cz60182.tw1.ru"></div>
+<div><label>Радио (поток)</label><input type="text" id="radioUrl" value="https://montecarlo.hostingradio.ru/montecarlo96.aacp"></div>
+</div>
+</div>
+
+<div class="section">
+<h2>2. Карта и Яндекс.Карты</h2>
+<label>Карта — вставь весь iframe или только URL src</label>
+<textarea id="mapIframe" placeholder="<iframe src='...'></iframe> или https://yandex.ru/map-widget/v1/?..."></textarea>
+<div class="row">
+<div><label>Маршрут</label><input type="text" id="routeLink"></div>
+<div><label>Отзывы</label><input type="text" id="reviewsLink"></div>
+</div>
+<div class="row">
+<div><label>Товары и услуги</label><input type="text" id="productsLink"></div>
+<div><label>Особенности</label><input type="text" id="featuresLink"></div>
+</div>
+</div>
+
+<div class="section">
+<h2>3. Контакты</h2>
+<div class="row">
+<div><label>Телефон 1 (как отображать)</label><input type="text" id="phone1" value="+7 (___) ___-__-__"></div>
+<div><label>Ссылка тел. 1 (tel:...)</label><input type="text" id="phone1Link" placeholder="tel:+7..."></div>
+</div>
+<div class="row">
+<div><label>Телефон 2 (опционально — ротация)</label><input type="text" id="phone2"></div>
+<div><label>Ссылка тел. 2</label><input type="text" id="phone2Link" placeholder="tel:+7..."></div>
+</div>
+<div class="hint">Если ввести 2 телефона — они будут меняться каждые 3 секунды.</div>
+<div style="margin-top:10px"><label>Кнопка БРОНИРОВАТЬ — URL (пусто = не показывать)</label><input type="text" id="bookingUrl" placeholder="https://..."></div>
+</div>
+
+<div class="section">
+<h2>4. Соцсети</h2>
+<div class="row">
+<div><label>Сайт</label><input type="text" id="siteLink"></div>
+<div><label>Телеграмм</label><input type="text" id="tgLink"></div>
+</div>
+<div class="row">
+<div><label>Ватсап</label><input type="text" id="waLink"></div>
+<div><label>МАКС</label><input type="text" id="maxLink"></div>
+</div>
+<div class="row">
+<div><label>Инстаграм</label><input type="text" id="instaLink"></div>
+<div><label>В Контакте</label><input type="text" id="vkLink"></div>
+</div>
+<div class="row">
+<div><label>Одноклассники</label><input type="text" id="okLink"></div>
+<div></div>
+</div>
+</div>
+
+<div class="section">
+<h2>5. 3D тур</h2>
+<div class="check"><input type="radio" name="tourMode" value="none" id="tm_none"><label for="tm_none" style="margin:0;cursor:pointer">Нет</label></div>
+<div class="check"><input type="radio" name="tourMode" value="single" id="tm_single" checked><label for="tm_single" style="margin:0;cursor:pointer">Одна ссылка (кнопка открывает сразу)</label></div>
+<div class="check"><input type="radio" name="tourMode" value="multi" id="tm_multi"><label for="tm_multi" style="margin:0;cursor:pointer">Несколько локаций (кнопка НАЗАД над телефоном)</label></div>
+<div style="margin-top:10px"><label>Ссылка для режима «одна ссылка»</label><input type="text" id="tourSingleUrl" placeholder="https://vr360real-hue.github.io/OBJECT/"></div>
+<div style="margin-top:10px"><label>Локации для режима «несколько» (по одной на строку: Название|URL)</label>
+<textarea id="tourLocations" style="min-height:100px" placeholder="ГОСТЕВОЙ ДОМ №1|https://...
+БАНЯ|https://...
+ДОРОГА|https://..."></textarea>
+</div>
+</div>
+
+<div class="section">
+<h2>6. Цвета кнопок</h2>
+<div class="row3">
+<div><label>Динамичные: фон</label><input type="color" id="dynBg" value="#f5efed"></div>
+<div><label>Динамичные: текст</label><input type="color" id="dynText" value="#333333"></div>
+</div>
+<div class="row3">
+<div><label>Статичные: фон</label><input type="color" id="statBg" value="#333333"></div>
+<div><label>Статичные: текст</label><input type="color" id="statText" value="#ffffff"></div>
+</div>
+<div class="row3">
+<div><label>Звук/управление: фон</label><input type="color" id="navBg" value="#000000"></div>
+<div><label>Звук/управление: текст</label><input type="color" id="navText" value="#ffffff"></div>
+</div>
+</div>
+
+<div class="section">
+<h2>7. Фото</h2>
+<label>Одна ссылка на строку</label>
+<textarea id="photos" style="min-height:160px" placeholder="https://...
+https://..."></textarea>
+<div class="check" style="margin-top:10px"><input type="checkbox" id="smartRandom" checked><label for="smartRandom" style="margin:0;cursor:pointer">Умный рандом (без повторов до конца цикла)</label></div>
+</div>
+
+<button type="submit" class="btn-gen">СГЕНЕРИРОВАТЬ</button>
+</form>
+
+<div class="section" style="margin-top:20px">
+<h2>Результат</h2>
+<textarea id="output" readonly placeholder="Здесь появится готовый код index.html"></textarea>
+<div class="actions">
+<button type="button" class="btn-copy" onclick="copyOut()">СКОПИРОВАТЬ</button>
+<button type="button" class="btn-dl" onclick="downloadOut()">СКАЧАТЬ index.html</button>
+</div>
+</div>
+
+</div>
+
+<script>
+function val(id){var e=document.getElementById(id);return e?(e.value||'').trim():'';}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function jsStr(s){return JSON.stringify(String(s==null?'':s));}
+function extractIframeSrc(input){
+    input=(input||'').trim();
+    if(!input) return '';
+    if(input.indexOf('<')!==-1){
+        var m=input.match(/src\s*=\s*["']([^"']+)["']/i);
+        if(m) return m[1];
+    }
+    return input;
+}
+
+function generate(){
+    var name=val('name')||'НАЗВАНИЕ';
+    var subtitle=val('subtitle');
+    var ogImage=val('ogImage');
+    var ogUrl=val('ogUrl');
+    var allowedDomain=val('allowedDomain')||'cz60182.tw1.ru';
+    var radioUrl=val('radioUrl')||'https://montecarlo.hostingradio.ru/montecarlo96.aacp';
+    var mapSrc=extractIframeSrc(val('mapIframe'));
+    var routeLink=val('routeLink');
+    var reviewsLink=val('reviewsLink');
+    var productsLink=val('productsLink');
+    var featuresLink=val('featuresLink');
+    var siteLink=val('siteLink');
+    var tgLink=val('tgLink');
+    var waLink=val('waLink');
+    var maxLink=val('maxLink');
+    var instaLink=val('instaLink');
+    var vkLink=val('vkLink');
+    var okLink=val('okLink');
+    var phone1=val('phone1');
+    var phone1Link=val('phone1Link')||('tel:'+phone1.replace(/[^\d+]/g,''));
+    var phone2=val('phone2');
+    var phone2Link=val('phone2Link')||('tel:'+phone2.replace(/[^\d+]/g,''));
+    var bookingUrl=val('bookingUrl');
+    var tourMode=document.querySelector('input[name="tourMode"]:checked').value;
+    var tourSingleUrl=val('tourSingleUrl');
+    var tourLocations=[];
+    if(tourMode==='multi'){
+        val('tourLocations').split('\n').forEach(function(line){
+            line=line.trim();
+            if(!line) return;
+            var p=line.split('|');
+            if(p.length>=2) tourLocations.push({name:p[0].trim(),url:p.slice(1).join('|').trim()});
+        });
+    }
+    var dynBg=val('dynBg')||'#f5efed';
+    var dynText=val('dynText')||'#333333';
+    var statBg=val('statBg')||'#333333';
+    var statText=val('statText')||'#ffffff';
+    var navBg=val('navBg')||'#000000';
+    var navText=val('navText')||'#ffffff';
+    var photos=val('photos').split('\n').map(function(l){return l.trim();}).filter(function(l){return l && l.indexOf('http')===0;});
+    var smartRandom=document.getElementById('smartRandom').checked;
+
+    var phoneNumbers=phone2?[phone1,phone2]:(phone1?[phone1]:[]);
+    var phoneLinks=phone2?[phone1Link,phone2Link]:(phone1?[phone1Link]:[]);
+
+    // Dynamic buttons list
+    var dynArr=[];
+    if(tourMode==='multi') dynArr.push({label:'3D ТУР',onclick:'enter3DMode()'});
+    else if(tourMode==='single'&&tourSingleUrl) dynArr.push({label:'3D ТУР',href:tourSingleUrl,target:'_blank'});
+    if(mapSrc) dynArr.push({label:'НА КАРТУ',onclick:'showMap()'});
+    if(routeLink) dynArr.push({label:'ПРОЛОЖИТЬ МАРШРУТ',href:routeLink,target:'_blank'});
+    if(reviewsLink) dynArr.push({label:'ОТЗЫВЫ',href:reviewsLink,target:'_blank'});
+    if(productsLink) dynArr.push({label:'ТОВАРЫ И УСЛУГИ',href:productsLink,target:'_blank'});
+    if(featuresLink) dynArr.push({label:'ОСОБЕННОСТИ',href:featuresLink,target:'_blank'});
+    if(siteLink) dynArr.push({label:'САЙТ',href:siteLink,target:'_blank'});
+    if(tgLink) dynArr.push({label:'ТЕЛЕГРАММ',href:tgLink,target:'_blank'});
+    if(waLink) dynArr.push({label:'ВАТСАП',href:waLink,target:'_blank'});
+    if(maxLink) dynArr.push({label:'МАКС',href:maxLink,target:'_blank'});
+    if(instaLink) dynArr.push({label:'ИНСТАГРАМ',href:instaLink,target:'_blank'});
+    if(vkLink) dynArr.push({label:'В КОНТАКТЕ',href:vkLink,target:'_blank'});
+    if(okLink) dynArr.push({label:'ОДНОКЛАССНИКИ',href:okLink,target:'_blank'});
+
+    var dynJs='[\n'+dynArr.map(function(b){
+        var parts=['label:'+jsStr(b.label)];
+        if(b.href) parts.push('href:'+jsStr(b.href));
+        if(b.onclick) parts.push('onclick:'+jsStr(b.onclick));
+        if(b.target) parts.push('target:'+jsStr(b.target));
+        return '            {'+parts.join(', ')+'}';
+    }).join(',\n')+'\n        ]';
+
+    var tourJs='var tourLocations = [\n'+tourLocations.map(function(t){
+        return '            {name:'+jsStr(t.name)+', url:'+jsStr(t.url)+'}';
+    }).join(',\n')+'\n        ];';
+
+    var photosJs='var photos = [\n'+photos.map(function(p){return '            '+jsStr(p);}).join(',\n')+'\n        ];';
+    var phonesJs='var phoneNumbers = '+JSON.stringify(phoneNumbers)+';\n        var phoneLinks = '+JSON.stringify(phoneLinks)+';';
+
+    var slideLogicJs;
+    if(smartRandom){
+        slideLogicJs=`var shuffledOrder = [];
+        var shuffleIdx = 0;
+        var isManualMode = false;
+        var manualTimeout = null;
+        var MANUAL_TIMEOUT_MS = 7000;
+
+        function shuffleArray(arr) {
+            for (var i = arr.length - 1; i > 0; i--) {
+                var j = Math.floor(Math.random() * (i + 1));
+                var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+            }
+            return arr;
+        }
+        function reshuffle() {
+            shuffledOrder = [];
+            for (var i = 0; i < photos.length; i++) shuffledOrder.push(i);
+            shuffleArray(shuffledOrder);
+            shuffleIdx = 0;
+        }
+        function nextRandomSlide() {
+            if (shuffleIdx >= shuffledOrder.length) reshuffle();
+            var idx = shuffledOrder[shuffleIdx];
+            shuffleIdx++;
+            currentSlide = idx;
+            updateMainSlider();
+        }
+        function enterManualMode() {
+            isManualMode = true;
+            if (manualTimeout) clearTimeout(manualTimeout);
+            manualTimeout = setTimeout(function() {
+                isManualMode = false;
+                manualTimeout = null;
+            }, MANUAL_TIMEOUT_MS);
+        }
+        function nextSlide() {
+            enterManualMode();
+            currentSlide = (currentSlide + 1) % photos.length;
+            updateMainSlider();
+        }
+        function prevSlide() {
+            enterManualMode();
+            currentSlide = (currentSlide - 1 + photos.length) % photos.length;
+            updateMainSlider();
+        }
+        function goToSlideManual(index) {
+            enterManualMode();
+            if (index < 0) index = photos.length - 1;
+            if (index >= photos.length) index = 0;
+            currentSlide = index;
+            updateMainSlider();
+        }
+        function startAutoMain() {
+            if (autoTimerMain) clearInterval(autoTimerMain);
+            autoTimerMain = setInterval(function() {
+                if (isManualMode) return;
+                nextRandomSlide();
+            }, 3000);
+        }
+        function resetAutoMain() {
+            if (autoTimerMain) clearInterval(autoTimerMain);
+            startAutoMain();
+        }`;
+    } else {
+        slideLogicJs=`function nextSlide() {
+            currentSlide = (currentSlide + 1) % photos.length;
+            updateMainSlider();
+            resetAutoMain();
+        }
+        function prevSlide() {
+            currentSlide = (currentSlide - 1 + photos.length) % photos.length;
+            updateMainSlider();
+            resetAutoMain();
+        }
+        function goToSlideManual(index) {
+            if (index < 0) index = photos.length - 1;
+            if (index >= photos.length) index = 0;
+            currentSlide = index;
+            updateMainSlider();
+            resetAutoMain();
+        }
+        function startAutoMain() {
+            if (autoTimerMain) clearInterval(autoTimerMain);
+            autoTimerMain = setInterval(nextSlide, 3000);
+        }
+        function resetAutoMain() {
+            if (autoTimerMain) clearInterval(autoTimerMain);
+            startAutoMain();
+        }`;
+    }
+
+    var tourLogicJs = tourMode==='multi' ? `
+        function enter3DMode() {
+            is3DMode = true;
+            var scrollDiv = document.getElementById('buttonsScroll');
+            scrollDiv.innerHTML = '';
+            tourLocations.forEach(function(item) {
+                var btn = document.createElement('a');
+                btn.href = item.url;
+                btn.target = '_blank';
+                btn.className = 'btn';
+                btn.textContent = item.name;
+                scrollDiv.appendChild(btn);
+            });
+            secondPanel.classList.remove('hidden-panel');
+            isControlsVisible = true;
+            toggleBtn.textContent = 'УБРАТЬ КНОПКИ';
+            if (back3DBtn) back3DBtn.style.display = 'flex';
+        }
+        function exit3DMode() {
+            is3DMode = false;
+            if (back3DBtn) back3DBtn.style.display = 'none';
+            buildNormalButtons();
+        }` : `
+        function enter3DMode() {}
+        function exit3DMode() {}`;
+
+    var headPart = `<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <meta name="referrer" content="no-referrer">
+
+    <meta property="og:title" content="${esc(name)}" />
+    <meta property="og:description" content="${esc(subtitle)}" />
+    <meta property="og:image" content="${esc(ogImage)}" />
+    <meta property="og:url" content="${esc(ogUrl)}" />
+    <meta property="og:type" content="website" />
+
+    <title>${esc(name)}</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        html, body { width:100%; height:100%; background:#fff; }
+        body { display:flex; align-items:center; justify-content:center; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; padding:0; min-height:100vh; min-height:100dvh; }
+        ._c { position:relative; display:flex; flex-direction:column; height:100vh; height:100dvh; padding:0; background:#fff; overflow:hidden; width:330px; max-width:330px; margin:0 auto; }
+        @media (max-width:600px) { ._c { width:calc(100% - 4px); max-width:none; margin:0; } }
+        ._bg-model { position:absolute; top:0; left:0; width:100%; height:100%; z-index:0; pointer-events:none; overflow:hidden; background:#fff; }
+        ._mp { position:relative; z-index:1; display:flex; flex-direction:column; width:100%; height:100%; background:transparent; }
+
+        ._h { display:flex; align-items:center; justify-content:center; gap:6px; font-weight:700; font-size:15px; color:${dynText}; padding:0; height:32px; flex-shrink:0; cursor:pointer; background:#fff; text-shadow:none; width:100%; letter-spacing:0.3px; border-bottom:1px solid #e0e0e0; }
+        ._s { font-size:9px; color:#777; text-align:center; background:#fff; letter-spacing:0.5px; padding:0; height:16px; line-height:16px; flex-shrink:0; width:100%; border-bottom:1px solid #e0e0e0; }
+
+        ._mw { width:100%; flex:1 1 auto; position:relative; display:flex; flex-direction:column; overflow:hidden; border-radius:0; margin:0; background:transparent; }
+        ._mw ._m1, ._mw ._g { display:none; flex-direction:column; width:100%; height:100%; background:#fff; border-radius:0; overflow:hidden; flex:1 0 100%; }
+        ._mw .active-widget { display:flex !important; }
+
+        ._mw ._m1 ._map-wrap { flex:1; position:relative; overflow:hidden; }
+        ._mw ._m1 ._map-wrap iframe { width:100%; height:100%; border:0; display:block; position:absolute; top:0; left:0; }
+
+        ._g { display:flex; flex-direction:column; height:100%; }
+        ._phg { flex:1; min-height:0; position:relative; background:#fff; }
+        ._phgw { width:100%; height:100%; position:relative; background:#fff; }
+        .slider-container { width:100%; height:100%; position:relative; overflow:hidden; background:#fff; border-radius:0; }
+        .slider-track { width:100%; height:100%; position:relative; }
+        .slider-slide { position:absolute; top:0; left:0; width:100%; height:100%; opacity:0; transition:opacity .4s ease; background:#fff; }
+        .slider-slide.active { opacity:1; z-index:1; }
+        .slider-slide img { width:100%; height:100%; object-fit:cover; display:block; border-radius:0; pointer-events:none; user-select:none; -webkit-user-drag:none; }
+        .slider-blocker { position:absolute; top:0; left:0; width:100%; height:100%; z-index:5; background:transparent; pointer-events:auto; touch-action:none; cursor:pointer; }
+        .slider-dots { position:absolute; bottom:12px; left:0; right:0; display:flex; justify-content:center; gap:6px; z-index:10; overflow-x:auto; overflow-y:hidden; white-space:nowrap; padding:0 8px; scrollbar-width:none; -ms-overflow-style:none; pointer-events:auto; scroll-behavior:smooth; }
+        .slider-dots::-webkit-scrollbar { display:none; }
+        .slider-dot { flex:0 0 auto; width:6px; height:6px; border-radius:50%; background:rgba(0,0,0,0.25); cursor:pointer; transition:all .2s ease; pointer-events:auto; }
+        .slider-dot.active { background:${dynBg}; width:18px; border-radius:9px; }
+
+        ._secondPanel { flex:0 1 auto; max-height:50%; overflow:hidden; display:flex; flex-direction:column; background:transparent; transition:all 0.3s ease; }
+        ._secondPanel.hidden-panel { display:none !important; }
+        ._scrollButtons { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:0; -webkit-overflow-scrolling:touch; padding:0 !important; background:#fff; }
+        ._scrollButtons .btn { background:${dynBg}; color:${dynText}; border:none; display:inline-flex; align-items:center; justify-content:center; padding:0 8px; height:44px !important; min-height:44px; text-decoration:none; border-radius:0; width:100%; text-align:center; cursor:pointer; font-size:14px; font-weight:700; transition:all .2s ease; flex-shrink:0; margin:0 0 1px 0; letter-spacing:0.3px; }
+        ._scrollButtons .btn:last-child { margin-bottom:0; }
+        ._scrollButtons .btn:active { background:#fff; color:${dynText}; transform:scale(0.98); }
+        ._scrollButtons::-webkit-scrollbar { width:2px; }
+        ._scrollButtons::-webkit-scrollbar-track { background:rgba(0,0,0,0.05); }
+        ._scrollButtons::-webkit-scrollbar-thumb { background:${dynBg}; border-radius:0; }
+
+        ._bottomFixed { flex-shrink:0; display:flex; flex-direction:column; gap:0; background:#fff; border-top:none; padding:0 !important; }
+        ._bottomFixed .btn-static { display:inline-flex; align-items:center; justify-content:center; background:${statBg}; color:${statText}; padding:0 8px; height:44px !important; min-height:44px; text-decoration:none !important; border-radius:0 !important; width:100%; text-align:center; border:none; cursor:pointer; font-size:14px; font-weight:700; transition:all .2s ease; flex-shrink:0; margin:0; letter-spacing:0.3px; }
+        ._bottomFixed .btn-static:active { background:${dynBg}; color:${dynText}; transform:scale(0.98); }
+        ._bottomFixed .btn-static.burgundy-btn { background:${navBg}; color:${navText}; border:none; }
+        ._bottomFixed .btn-static.burgundy-btn:active { background:${statBg}; color:${statText}; }
+        ._bottomFixed .split-row { display:flex; width:100%; }
+        ._bottomFixed .split-row button { height:44px; min-height:44px; border-radius:0 !important; flex:1; width:50%; margin:0; border-top:1px solid #fff; }
+        ._bottomFixed .split-row button:first-child { border-right:1px solid #fff; }
+
+        ._map-back { display:flex; flex-direction:column; gap:0; background:#fff; flex-shrink:0; border-top:none; padding:0 !important; }
+        ._map-back .btn-static { display:inline-flex; align-items:center; justify-content:center; background:${statBg}; color:${statText}; padding:0 8px; height:44px !important; min-height:44px; text-decoration:none !important; border-radius:0 !important; width:100%; text-align:center; border:none; cursor:pointer; font-size:14px; font-weight:700; transition:all .2s ease; flex-shrink:0; margin:0; letter-spacing:0.3px; }
+        ._map-back .btn-static:active { background:${dynBg}; color:${dynText}; transform:scale(0.98); }
+        ._map-back .btn-static.burgundy-btn { background:${navBg}; color:${navText}; border:none; }
+        ._map-back .btn-static.burgundy-btn:active { background:${statBg}; color:${statText}; }
+        ._map-back .split-row { display:flex; width:100%; }
+        ._map-back .split-row button { height:44px; min-height:44px; border-radius:0 !important; flex:1; width:50%; margin:0; border-top:1px solid #fff; }
+        ._map-back .split-row button:first-child { border-right:1px solid #fff; }
+
+        ._lb { display:none !important; }
+        .phone-rotate { transition:all 0.2s ease; }
+    </style>
+</head>
+<body>
+<div class="_c" id="appContainer">
+    <div class="_bg-model"></div>
+    <div class="_mp" id="mainPanel">
+        <div class="_h" id="mainHeader">${esc(name)}</div>
+        <div class="_s" id="mainSubtitle">${esc(subtitle)}</div>
+        <div class="_mw">
+            ${mapSrc ? `<div class="_m1" id="mapWidget">
+                <div class="_map-wrap">
+                    <iframe src="${esc(mapSrc)}" width="100%" height="100%" frameborder="0" allowfullscreen="true" style="position:relative;"></iframe>
+                </div>
+                <div class="_map-back" id="mapBack">
+                    <button class="btn-static" onclick="showGallery()">НАЗАД</button>
+                    ${bookingUrl ? `<a href="${esc(bookingUrl)}" target="_blank" class="btn-static" style="text-decoration:none;">БРОНИРОВАТЬ</a>` : ''}
+                    <div class="split-row">
+                        <button class="btn-static burgundy-btn sound-toggle" onclick="toggleSound()" style="border-right:1px solid #fff;">ВКЛЮЧИТЬ ЗВУК</button>
+                    </div>
+                </div>
+            </div>` : ''}
+
+            <div class="_g active-widget" id="galleryBlock">
+                <div class="_phg">
+                    <div class="_phgw">
+                        <div class="slider-container" id="mainSlider">
+                            <div class="slider-track" id="sliderTrack"></div>
+                            <div class="slider-blocker" id="sliderBlocker"></div>
+                            <div class="slider-dots" id="sliderDots"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="_secondPanel" id="secondPanel">
+                    <div class="_scrollButtons" id="buttonsScroll"></div>
+                </div>
+                <div class="_bottomFixed" id="bottomFixed">
+                    <button class="btn-static" id="back3DBtn" onclick="exit3DMode()" style="display:none;">НАЗАД</button>
+                    ${phone1 ? `<a href="${esc(phone1Link)}" class="btn-static phone-rotate" id="callBtn" style="text-decoration:none;">${esc(phone1)}</a>` : ''}
+                    ${bookingUrl ? `<a href="${esc(bookingUrl)}" target="_blank" class="btn-static" style="text-decoration:none;">БРОНИРОВАТЬ</a>` : ''}
+                    <div class="split-row" id="splitButtonRow">
+                        <button class="btn-static burgundy-btn sound-toggle" onclick="toggleSound()" style="border-right:1px solid #fff;">ВКЛЮЧИТЬ ЗВУК</button>
+                        <button class="btn-static burgundy-btn" id="controlsToggleBtn" onclick="toggleControls()">УБРАТЬ КНОПКИ</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+`;
+
+    var scriptBody = `
+        // защита домена
+        (function() {
+            var allowed = ${JSON.stringify([allowedDomain])};
+            var host = window.location.hostname;
+            var ok = false;
+            for (var i = 0; i < allowed.length; i++) {
+                if (host === allowed[i] || host.endsWith('.' + allowed[i])) { ok = true; break; }
+            }
+            if (!ok) {
+                document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;color:#999;text-align:center;padding:20px;"><div><h2>Доступ ограничен</h2><p>Этот сайт работает только на разрешённом домене.</p></div></div>';
+                throw new Error('Домен не разрешён');
+            }
+        })();
+
+        ${photosJs}
+
+        ${phonesJs}
+        var phoneIndex = 0;
+
+        var mapWidget = document.getElementById('mapWidget');
+        var galleryBlock = document.getElementById('galleryBlock');
+        var secondPanel = document.getElementById('secondPanel');
+        var toggleBtn = document.getElementById('controlsToggleBtn');
+        var callBtn = document.getElementById('callBtn');
+        var back3DBtn = document.getElementById('back3DBtn');
+        var isControlsVisible = true;
+        var is3DMode = false;
+
+        function hideAllWidgets() {
+            var arr = [mapWidget, galleryBlock];
+            arr.forEach(function(w) { if (w) w.classList.remove('active-widget'); });
+        }
+
+        function showGallery() {
+            hideAllWidgets();
+            galleryBlock.classList.add('active-widget');
+            document.getElementById('mainHeader').style.display = 'flex';
+            document.getElementById('mainSubtitle').style.display = 'block';
+            if (is3DMode && typeof exit3DMode === 'function') exit3DMode();
+            resetAutoMain();
+        }
+
+        function showMap() {
+            if (!mapWidget) return;
+            hideAllWidgets();
+            mapWidget.classList.add('active-widget');
+            resetAutoMain();
+            document.getElementById('mainHeader').style.display = 'flex';
+            document.getElementById('mainSubtitle').style.display = 'block';
+        }
+
+        function toggleControls() {
+            var isGalleryActive = galleryBlock.classList.contains('active-widget');
+            if (!isGalleryActive) return;
+            isControlsVisible = !isControlsVisible;
+            if (isControlsVisible) {
+                secondPanel.classList.remove('hidden-panel');
+                toggleBtn.textContent = 'УБРАТЬ КНОПКИ';
+            } else {
+                secondPanel.classList.add('hidden-panel');
+                toggleBtn.textContent = 'ВЕРНУТЬ КНОПКИ';
+            }
+        }
+
+        function rotatePhone() {
+            if (!callBtn || phoneNumbers.length < 2) return;
+            phoneIndex = (phoneIndex + 1) % phoneNumbers.length;
+            callBtn.textContent = phoneNumbers[phoneIndex];
+            callBtn.href = phoneLinks[phoneIndex];
+        }
+
+        var currentSlide = 0;
+        var autoTimerMain = null;
+        var sliderTrack = document.getElementById('sliderTrack');
+        var dotsContainer = document.getElementById('sliderDots');
+
+        ${slideLogicJs}
+
+        ${tourJs}
+
+        ${tourLogicJs}
+
+        function buildMainSlider() {
+            sliderTrack.innerHTML = '';
+            dotsContainer.innerHTML = '';
+            photos.forEach(function(src, idx) {
+                var slideDiv = document.createElement('div');
+                slideDiv.className = 'slider-slide';
+                if (idx === currentSlide) slideDiv.classList.add('active');
+                var img = document.createElement('img');
+                img.src = src;
+                img.draggable = false;
+                slideDiv.appendChild(img);
+                sliderTrack.appendChild(slideDiv);
+                var dot = document.createElement('div');
+                dot.className = 'slider-dot';
+                if (idx === currentSlide) dot.classList.add('active');
+                dot.addEventListener('click', function() { goToSlideManual(idx); });
+                dotsContainer.appendChild(dot);
+            });
+        }
+
+        function updateMainSlider() {
+            var slides = document.querySelectorAll('#mainSlider .slider-slide');
+            var dots = document.querySelectorAll('#mainSlider .slider-dot');
+            slides.forEach(function(s, i) { s.classList.toggle('active', i === currentSlide); });
+            dots.forEach(function(d, i) {
+                if (i === currentSlide) {
+                    d.classList.add('active');
+                    d.style.background = '${dynBg}';
+                    d.style.width = '18px';
+                    d.style.borderRadius = '9px';
+                } else {
+                    d.classList.remove('active');
+                    d.style.background = 'rgba(0,0,0,0.25)';
+                    d.style.width = '6px';
+                    d.style.borderRadius = '50%';
+                }
+            });
+            var activeDot = dots[currentSlide];
+            if (activeDot) {
+                var dotLeft = activeDot.offsetLeft;
+                var dotWidth = activeDot.offsetWidth;
+                var containerWidth = dotsContainer.clientWidth;
+                var targetScroll = dotLeft - containerWidth / 2 + dotWidth / 2;
+                if (targetScroll < 0) targetScroll = 0;
+                dotsContainer.scrollTo({ left: targetScroll, behavior: 'smooth' });
+            }
+        }
+
+        var touchStartX = 0, touchEndX = 0;
+        var sliderContainer = document.getElementById('mainSlider');
+        sliderContainer.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+        }, false);
+        sliderContainer.addEventListener('touchend', function(e) {
+            touchEndX = e.changedTouches[0].screenX;
+            if (touchEndX < touchStartX - 50) nextSlide();
+            if (touchEndX > touchStartX + 50) prevSlide();
+        }, false);
+
+        ${smartRandom ? 'reshuffle();' : ''}
+        currentSlide = 0;
+        buildMainSlider();
+        startAutoMain();
+
+        document.getElementById('sliderBlocker').addEventListener('click', function(e) {
+            if (galleryBlock.classList.contains('active-widget')) toggleControls();
+        });
+
+        var mainButtons = ${dynJs};
+
+        function buildNormalButtons() {
+            var scrollDiv = document.getElementById('buttonsScroll');
+            scrollDiv.innerHTML = '';
+            mainButtons.forEach(function(item) {
+                var btn = document.createElement('a');
+                if (item.onclick) {
+                    btn.href = 'javascript:void(0)';
+                    btn.onclick = function() { eval(item.onclick); };
+                } else if (item.href) {
+                    btn.href = item.href;
+                    if (item.target) btn.target = item.target;
+                }
+                btn.className = 'btn';
+                btn.textContent = item.label;
+                scrollDiv.appendChild(btn);
+            });
+        }
+        buildNormalButtons();
+
+        var audioPlayer = null;
+        var isMusicMuted = true;
+        var RADIO_STREAM = ${jsStr(radioUrl)};
+        var VOLUME = 0.3;
+
+        function stopRadioIfPlaying() {
+            if (audioPlayer && !audioPlayer.paused) {
+                audioPlayer.pause();
+                audioPlayer.src = '';
+                audioPlayer = null;
+                isMusicMuted = true;
+                updateAllSoundButtons();
+            }
+        }
+        function updateAllSoundButtons() {
+            var btns = document.querySelectorAll('.sound-toggle');
+            var text = isMusicMuted ? 'ВКЛЮЧИТЬ ЗВУК' : 'ВЫКЛЮЧИТЬ ЗВУК';
+            btns.forEach(function(btn) { btn.textContent = text; });
+        }
+        function toggleSound() {
+            if (isMusicMuted) {
+                if (audioPlayer) { audioPlayer.pause(); audioPlayer.src = ''; audioPlayer = null; }
+                audioPlayer = new Audio(RADIO_STREAM);
+                audioPlayer.volume = VOLUME;
+                audioPlayer.crossOrigin = 'anonymous';
+                audioPlayer.addEventListener('error', function() { isMusicMuted = true; updateAllSoundButtons(); });
+                audioPlayer.load();
+                audioPlayer.play().catch(function() { isMusicMuted = true; updateAllSoundButtons(); });
+                isMusicMuted = false;
+            } else {
+                if (audioPlayer) { audioPlayer.pause(); audioPlayer.src = ''; audioPlayer = null; }
+                isMusicMuted = true;
+            }
+            updateAllSoundButtons();
+        }
+        function stopMusicOnExternalLinks() {
+            document.addEventListener('click', function(e) {
+                var link = e.target.closest ? e.target.closest('a') : null;
+                if (!link) return;
+                var href = link.getAttribute('href') || '';
+                var target = link.getAttribute('target') || '';
+                var isExternal = (target === '_blank') || href.indexOf('tel:') === 0 || href.indexOf('mailto:') === 0 || href.indexOf('http://') === 0 || href.indexOf('https://') === 0;
+                if (isExternal) stopRadioIfPlaying();
+            }, true);
+        }
+
+        window.addEventListener('load', function() {
+            fixHeight();
+            showGallery();
+            updateAllSoundButtons();
+            stopMusicOnExternalLinks();
+            if (phoneNumbers.length > 1) setInterval(rotatePhone, 3000);
+        });
+        window.addEventListener('resize', fixHeight);
+        window.addEventListener('orientationchange', fixHeight);
+        setTimeout(fixHeight, 100);
+        function fixHeight() {
+            var container = document.getElementById('appContainer');
+            var vh = window.innerHeight * 0.01;
+            container.style.height = 'calc(' + vh + 'px * 100)';
+        }
+        document.getElementById('mainHeader').addEventListener('click', showGallery);
+        window.showGallery = showGallery;
+        window.showMap = showMap;
+        window.toggleControls = toggleControls;
+        window.toggleSound = toggleSound;
+        window.enter3DMode = enter3DMode;
+        window.exit3DMode = exit3DMode;
+    `;
+
+    var html = headPart + '<script>\n' + scriptBody + '\n<\/script>\n</body>\n</html>';
+
+    document.getElementById('output').value = html;
+}
+
+function copyOut() {
+    var t = document.getElementById('output');
+    if (!t.value) return alert('Сначала нажми СГЕНЕРИРОВАТЬ');
+    t.select();
+    t.setSelectionRange(0, 999999);
+    document.execCommand('copy');
+    alert('Код скопирован в буфер обмена');
+}
+
+function downloadOut() {
+    var t = document.getElementById('output');
+    if (!t.value) return alert('Сначала нажми СГЕНЕРИРОВАТЬ');
+    var blob = new Blob([t.value], {type: 'text/html;charset=utf-8'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'index.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(a.href);}, 1000);
+}
+</script>
+</body>
+</html>
