@@ -29,19 +29,53 @@ input[type=color]{padding:2px;height:36px;cursor:pointer}
 .btn-dl{background:#5cb85c;color:#fff}
 .btn-copy:hover{background:#3278a3}
 .btn-dl:hover{background:#4cae4c}
-#output{min-height:400px;font-family:Consolas,Monaco,monospace;font-size:11px;white-space:pre;overflow-wrap:normal;overflow-x:auto}
+#output{min-height:200px;font-family:Consolas,Monaco,monospace;font-size:11px;white-space:pre;overflow-wrap:normal;overflow-x:auto}
 .check{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:13px;color:#333;cursor:pointer;background:#f9f9f9;padding:6px;border-radius:4px}
 .check input{width:auto;height:16px}
 .del-check{display:flex;align-items:center;gap:6px;font-size:12px;color:#e74c3c;font-weight:700;cursor:pointer;float:right;margin:0}
 .del-check input{width:auto;height:14px;accent-color:#e74c3c}
 .hint{font-size:11px;color:#888;margin-top:4px;line-height:1.4}
 .free-row{display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-bottom:8px}
+
+/* Стили для макета телефона */
+.phone-mockup {
+    width: 350px;
+    height: 700px;
+    margin: 20px auto;
+    border: 14px solid #1a1a1a;
+    border-radius: 40px;
+    background: #000;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+    box-sizing: content-box;
+}
+.phone-mockup::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 20px;
+    background: #1a1a1a;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    z-index: 10;
+}
+.phone-mockup iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: #fff;
+    display: block;
+}
 </style>
 </head>
 <body>
 <div class="wrap">
 <h1>Генератор визиток PRO</h1>
-<div class="sub">Создавай, редактируй, защищай!</div>
+<div class="sub">Создавай, редактируй, проверяй!</div>
 
 <form id="form" onsubmit="event.preventDefault();generate();">
 
@@ -192,16 +226,24 @@ https://..."></textarea>
 </div>
 </div>
 
-<button type="submit" class="btn-gen">СГЕНЕРИРОВАТЬ</button>
+<button type="submit" class="btn-gen">СГЕНЕРИРОВАТЬ И ОБНОВИТЬ ПРЕВЬЮ</button>
 </form>
 
 <div class="section" style="margin-top:20px">
-<h2>Результат</h2>
+<h2>Результат (Код)</h2>
 <textarea id="output" readonly placeholder="Здесь появится готовый код index.html"></textarea>
 <div class="actions">
-<button type="button" class="btn-copy" onclick="copyOut()">СКОПИРОВАТЬ</button>
+<button type="button" class="btn-copy" onclick="copyOut()">СКОПИРОВАТЬ КОД</button>
 <button type="button" class="btn-dl" onclick="downloadOut()">СКАЧАТЬ index.html</button>
 </div>
+</div>
+
+<div class="section" style="background:#eef2f5; border-left-color:#3c8dbc;">
+    <h2>Предпросмотр визитки</h2>
+    <div class="phone-mockup">
+        <iframe id="previewFrame" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"></iframe>
+    </div>
+    <div class="hint" style="text-align:center; margin-top:10px;">Листайте вверх-вниз внутри экрана телефона, чтобы проверить меню и кнопки.</div>
 </div>
 
 </div>
@@ -212,12 +254,11 @@ function chk(id){var e=document.getElementById(id);return e?e.checked:false;}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function jsStr(s){return JSON.stringify(String(s==null?'':s));}
 
-// ========== МОЩНЫЙ ПАРСЕР (РАБОТАЕТ ДАЖЕ С СПЛОШНЫМ ТЕКСТОМ) ==========
+// ========== МОЩНЫЙ ПАРСЕР ==========
 function parseAndFill() {
     var text = val('existingCode');
     if (!text) return alert('Вставь код или текст для распознавания!');
 
-    // 1. Название и описание
     var name = '', subtitle = '';
     var titleMatch = text.match(/<title>([^<]+)<\/title>/i);
     var ogTitleMatch = text.match(/property=["']og:title["']\s+content=["']([^"']+)["']/i) || text.match(/content=["']([^"']+)["']\s+property=["']og:title["']/i);
@@ -229,7 +270,6 @@ function parseAndFill() {
     
     if(ogDescMatch) subtitle = ogDescMatch[1];
 
-    // Эвристика для сплошного текста
     if(!name && !text.includes('<')) {
         var lines = text.split('\n').map(function(l){return l.trim();}).filter(function(l){return l;});
         if(lines.length > 0 && !lines[0].includes('http') && !lines[0].includes('tel:')) name = lines[0];
@@ -240,7 +280,6 @@ function parseAndFill() {
     if(subtitle) document.getElementById('subtitle').value = subtitle;
     if(ogImgMatch) document.getElementById('ogImage').value = ogImgMatch[1];
 
-    // 2. Все ссылки и телефоны
     var urls = text.match(/(https?:\/\/[^\s"'<>]+)/gi) || [];
     var telMatches = text.match(/(?:\+7|8)[\s\-\(]*\d{3}[\s\-\)]*\d{3}[\s\-]*\d{2}[\s\-]*\d{2}/g) || text.match(/tel:([^\s"'<>]+)/gi) || [];
     
@@ -261,7 +300,6 @@ function parseAndFill() {
     var tourUrl = '', siteLink = '', tgLink = '', waLink = '', vkLink = '', okLink = '', instaLink = '', maxLink = '';
     var freeIndex = 1;
 
-    // Очистка свободных кнопок перед парсингом
     for(var i=1; i<=5; i++) {
         document.getElementById('freeName'+i).value = '';
         document.getElementById('freeUrl'+i).value = '';
@@ -279,7 +317,7 @@ function parseAndFill() {
             else if (url.includes('tab=features')) { if (!featuresLink) featuresLink = url; }
             else if (url.includes('tab=menu') || url.includes('tab=prices')) { if (!productsLink) productsLink = url; }
             else if (url.includes('mode=routes') || url.includes('rtext=')) { if (!routeLink) routeLink = url; }
-            else if (url.includes('/-/')) { if (!tourUrl) tourUrl = url; } // 3D тур
+            else if (url.includes('/-/')) { if (!tourUrl) tourUrl = url; }
         }
         else if (url.includes('t.me')) { if (!tgLink) tgLink = url; }
         else if (url.includes('wa.me') || url.includes('api.whatsapp')) { if (!waLink) waLink = url; }
@@ -288,7 +326,6 @@ function parseAndFill() {
         else if (url.includes('instagram.com')) { if (!instaLink) instaLink = url; }
         else if (url.includes('max.ru')) { if (!maxLink) maxLink = url; }
         else if (url.includes('rutube') || url.includes('sketchfab') || url.includes('avatars.mds.yandex') || url.includes('yapic')) {
-            // Игнорируем, обрабатываем отдельно
         }
         else if (url.includes('yandex') && url.includes('redirect.appmetrica')) {
             if (freeIndex <= 5) {
@@ -298,7 +335,6 @@ function parseAndFill() {
             }
         }
         else {
-            // Остальные ссылки - на сайт или в свободные
             if (!siteLink && !url.includes('.png') && !url.includes('.jpg') && !url.includes('.svg')) {
                 siteLink = url;
             } else if (freeIndex <= 5) {
@@ -329,9 +365,7 @@ function parseAndFill() {
     if(instaLink) document.getElementById('instaLink').value = instaLink;
     if(maxLink) document.getElementById('maxLink').value = maxLink;
 
-    // 3. ВИДЕО Rutube (Точный поиск)
     var videos = [];
-    // Ищем полные ссылки
     var rutubeUrlMatches = text.match(/https?:\/\/rutube\.ru\/(?:video|embed)\/([a-zA-Z0-9]+)/gi);
     if (rutubeUrlMatches) {
         rutubeUrlMatches.forEach(function(m) {
@@ -342,7 +376,6 @@ function parseAndFill() {
             }
         });
     }
-    // Ищем массив videoIds
     var idsArrayMatch = text.match(/videoIds\s*=\s*\[([^\]]+)\]/i);
     if (idsArrayMatch) {
         var idStrings = idsArrayMatch[1].match(/["']([^"']+)["']/g);
@@ -358,7 +391,6 @@ function parseAndFill() {
     }
     if(videos.length > 0) document.getElementById('videosRutube').value = videos.join('\n');
 
-    // 4. МОДЕЛИ Sketchfab (Точный поиск)
     var models = [];
     var sketchfabMatches = text.match(/https?:\/\/sketchfab\.com\/models\/([a-zA-Z0-9]+)/gi);
     if (sketchfabMatches) {
@@ -370,7 +402,6 @@ function parseAndFill() {
             }
         });
     }
-    // Если модель вставлена просто URL без /models/
     if(models.length === 0) {
         var modelUrlMatch = text.match(/https?:\/\/sketchfab\.com\/[^\s"'<>]+/gi);
         if (modelUrlMatch) {
@@ -381,7 +412,6 @@ function parseAndFill() {
     }
     if(models.length > 0) document.getElementById('models3d').value = models.join('\n');
 
-    // 5. Фотографии
     var photos = [];
     var imgMatches = text.match(/https?:\/\/avatars\.mds\.yandex\.net\/[^\s"'<>]+/gi);
     if (imgMatches) {
@@ -399,7 +429,6 @@ function parseAndFill() {
     }
     if(photos.length > 0) document.getElementById('photos').value = photos.join('\n');
 
-    // Сброс галочек удаления
     var delChecks = ['del_map','del_route','del_reviews','del_products','del_features','del_phone1','del_booking','del_site','del_tg','del_wa','del_max','del_insta','del_vk','del_ok','del_tour','del_photos','del_videos','del_models'];
     delChecks.forEach(function(id){ if(document.getElementById(id)) document.getElementById(id).checked = false; });
 
@@ -407,7 +436,6 @@ function parseAndFill() {
 }
 
 function generate(){
-    // --- ЛОГИКА РУЧНОГО СОЗДАНИЯ ---
     var name=val('name')||'НАЗВАНИЕ';
     var subtitle=val('subtitle');
     var ogImage=val('ogImage');
@@ -467,7 +495,6 @@ function generate(){
     var phoneNumbers=phone2?[phone1,phone2]:(phone1?[phone1]:[]);
     var phoneLinks=phone2?[phone1Link,phone2Link]:(phone1?[phone1Link]:[]);
 
-    // Видео
     var rutubeLinks = val('videosRutube').split('\n').map(function(l){return l.trim();}).filter(function(l){return l;});
     var otherLinks = val('videosOther').split('\n').map(function(l){return l.trim();}).filter(function(l){return l;});
     var newVideos = rutubeLinks.map(function(l) {
@@ -476,7 +503,6 @@ function generate(){
         return l;
     }).concat(otherLinks);
     
-    // Модели
     var modelsRaw = val('models3d').split('\n').map(function(l){return l.trim();}).filter(function(l){return l;});
     var newModels = [];
     modelsRaw.forEach(function(line) {
@@ -485,7 +511,6 @@ function generate(){
         else if (line.indexOf('http') === 0) newModels.push(line);
     });
 
-    // Кнопки (3D ТУР ВСЕГДА ВВЕРХУ)
     var finalButtons = [];
     
     if(tourMode==='multi') finalButtons.push({label:'3D ТУР',onclick:'enter3DMode()'});
@@ -580,7 +605,6 @@ function generate(){
         window.closeModel3d = closeModel3d;
     ` : `function showModel3d() {} window.showModel3d = showModel3d; function closeModel3d() {} window.closeModel3d = closeModel3d;`;
 
-    // НАША КНОПКА
     var ourBtnActive = chk('ourBtnActive') && !chk('ourBtnDelete');
     var ourBtnColor = val('ourBtnColor');
     var ourBtnBg = '#ffffff', ourBtnText = '#000000', ourBtnBorder = '#cccccc';
@@ -765,6 +789,9 @@ function generate(){
 
     var scriptBody = `
         (function() {
+            // Проверка, запущены ли мы внутри iframe (для предпросмотра)
+            try { if (window.self !== window.top) return; } catch(e) { return; }
+            
             var allowed = ${JSON.stringify([allowedDomain])};
             var host = window.location.hostname;
             var ok = false;
@@ -1012,6 +1039,12 @@ function generate(){
     var html = headPart + '<script>\n' + scriptBody + '\n<\/script>\n</body>\n</html>';
 
     document.getElementById('output').value = html;
+    
+    // ОБНОВЛЯЕМ ПРЕВЬЮ
+    var previewFrame = document.getElementById('previewFrame');
+    if (previewFrame) {
+        previewFrame.srcdoc = html;
+    }
 }
 
 function copyOut() {
