@@ -11,6 +11,7 @@ h1{font-size:22px;margin-bottom:8px}
 .sub{color:#666;font-size:14px;margin-bottom:20px}
 .section{background:#fff;border-radius:8px;padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.06);border-left:4px solid #ddd}
 .section.edit-mode{border-left-color:#e74c3c;background:#fff9f9}
+.section.auto-mode{border-left-color:#f39c12;background:#fffdf9}
 .section h2{font-size:15px;margin-bottom:12px;color:#333;border-bottom:1px solid #eee;padding-bottom:8px;display:flex;justify-content:space-between;align-items:center}
 label{display:block;font-size:12px;color:#555;margin:8px 0 4px;font-weight:600}
 input[type=text],input[type=color],textarea,select{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit;background:#fff;color:#222}
@@ -21,6 +22,9 @@ input[type=color]{padding:2px;height:36px;cursor:pointer}
 @media(max-width:700px){.row,.row3{grid-template-columns:1fr}}
 .btn-gen{display:block;width:100%;padding:14px;background:#24584b;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;margin-top:10px;letter-spacing:1px}
 .btn-gen:hover{background:#1a4137}
+.btn-search{background:#f39c12;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-weight:bold;cursor:pointer;height:36px;white-space:nowrap}
+.btn-search:hover{background:#d68910}
+.search-row{display:flex;gap:10px}
 .actions{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
 .actions button{flex:1;padding:12px;border:none;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:.5px}
 .btn-copy{background:#3c8dbc;color:#fff}
@@ -39,15 +43,24 @@ input[type=color]{padding:2px;height:36px;cursor:pointer}
 <body>
 <div class="wrap">
 <h1>Генератор визиток PRO</h1>
-<div class="sub">Создавай, редактируй и защищай свои визитки!</div>
+<div class="sub">Создавай, редактируй, защищай и автоматизируй!</div>
 
 <form id="form" onsubmit="event.preventDefault();generate();">
 
+<div class="section auto-mode">
+<h2>0. АВТО-ЗАПОЛНЕНИЕ С ЯНДЕКС.КАРТ</h2>
+<div class="search-row">
+    <input type="text" id="yandexUrl" placeholder="Вставь ссылку на объект с Яндекс.Карт (например: https://yandex.ru/maps/.../org/...)">
+    <button type="button" class="btn-search" onclick="parseYandexUrl()">ПОИСК</button>
+</div>
+<div class="hint">Генератор вытащит из ссылки ID организации, координаты и сам создаст ссылки на маршрут, отзывы, меню и код карты. Название и телефоны нужно будет вписать вручную.</div>
+</div>
+
 <div class="section edit-mode">
-<h2>0. Загрузить существующий код (Режим редактирования)</h2>
-<label>Вставь код готовой визитки, чтобы дополнить или удалить данные</label>
+<h2>0.1. Загрузить существующий код (Режим редактирования)</h2>
+<label>Вставь код готовой визитки (любой нашей старой), чтобы дополнить или удалить данные</label>
 <textarea id="existingCode" style="min-height:120px" placeholder="<!DOCTYPE html>..."></textarea>
-<div class="hint">Если поле заполнено, генератор возьмет этот код за основу. Галочки «УДАЛИТЬ» рядом с полями помогут стереть ненужное.</div>
+<div class="hint">Если поле заполнено, генератор просканирует код, вытащит все фото, кнопки, видео и модели. Галочки «УДАЛИТЬ» помогут стереть ненужное.</div>
 </div>
 
 <div class="section">
@@ -122,8 +135,7 @@ input[type=color]{padding:2px;height:36px;cursor:pointer}
 <div style="margin-top:10px"><label>Ссылка для режима «одна ссылка»</label><input type="text" id="tourSingleUrl" placeholder="https://vr360real-hue.github.io/OBJECT/"></div>
 <div style="margin-top:10px"><label>Локации для режима «несколько» (по одной на строку: Название|URL)</label>
 <textarea id="tourLocations" style="min-height:100px" placeholder="ГОСТЕВОЙ ДОМ №1|https://...
-БАНЯ|https://...
-ДОРОГА|https://..."></textarea>
+БАНЯ|https://..."></textarea>
 </div>
 </div>
 
@@ -179,6 +191,15 @@ https://..."></textarea>
 <h2>11. НАША КНОПКА (VRREAL360)</h2>
 <div class="check"><input type="checkbox" id="ourBtnActive"><label for="ourBtnActive" style="margin:0;cursor:pointer">АКТИВИРОВАТЬ кнопку VRREAL360 внизу визитки</label></div>
 <div class="check" style="color:#e74c3c;"><input type="checkbox" id="ourBtnDelete"><label for="ourBtnDelete" style="margin:0;cursor:pointer;color:#e74c3c;">УДАЛИТЬ нашу кнопку (если клиент оплатил)</label></div>
+<div class="row" style="margin-top:10px;">
+    <div><label>Цвет кнопки</label>
+    <select id="ourBtnColor">
+        <option value="white">Белая (по умолчанию)</option>
+        <option value="black">Черная</option>
+        <option value="gray">Серая</option>
+    </select>
+    </div>
+</div>
 </div>
 
 <button type="submit" class="btn-gen">СГЕНЕРИРОВАТЬ</button>
@@ -200,46 +221,115 @@ function val(id){var e=document.getElementById(id);return e?(e.value||'').trim()
 function chk(id){var e=document.getElementById(id);return e?e.checked:false;}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function jsStr(s){return JSON.stringify(String(s==null?'':s));}
-function extractIframeSrc(input){
-    input=(input||'').trim();
-    if(!input) return '';
-    if(input.indexOf('<')!==-1){
-        var m=input.match(/src\s*=\s*["']([^"']+)["']/i);
-        if(m) return m[1];
+
+// ========== УМНЫЙ ПАРСЕР ССЫЛОК ЯНДЕКС.КАРТ ==========
+function parseYandexUrl() {
+    var url = val('yandexUrl');
+    if (!url) return alert('Вставь ссылку на Яндекс.Карты');
+    
+    var oidMatch = url.match(/oid%3D(\d+)/) || url.match(/org\/([^\/]+)\/(\d+)/);
+    var llMatch = url.match(/ll=([\d\.]+)%2C([\d\.]+)/);
+    var poiMatch = url.match(/poi%5Bpoint%5D=([\d\.]+)%2C([\d\.]+)/) || url.match(/rtext=~([\d\.]+)%2C([\d\.]+)/);
+
+    if(!oidMatch || !llMatch || !poiMatch) {
+        return alert('Не удалось распознать ссылку. Убедись, что это ссылка на карточку организации Яндекс.Карт.');
     }
-    return input;
+
+    var oid = oidMatch[oidMatch.length-1];
+    var lon = llMatch[1];
+    var lat = llMatch[2];
+    var poiLon = poiMatch[1];
+    var poiLat = poiMatch[2];
+
+    // Генерируем ссылки
+    var mapSrc = `https://yandex.ru/map-widget/v1/?from=api-maps&ll=${lon}%2C${lat}&mode=poi&origin=jsapi21&poi%5Bpoint%5D=${poiLon}%2C${poiLat}&poi%5Buri%5D=ymapsbm1%3A%2F%2Forg%3Foid%3D${oid}&z=16.93`;
+    var routeLink = `https://yandex.ru/maps/?from=api-maps&ll=${lon}%2C${lat}&mode=routes&origin=jsapi21&rtext=~${poiLat}%2C${poiLon}&rtt=mt&ruri=~ymapsbm1%3A%2F%2Forg%3Foid%3D${oid}&z=16.93`;
+    var reviewsLink = `https://yandex.ru/maps/org/${oid}/reviews/`;
+    var featuresLink = `https://yandex.ru/maps/?from=api-maps&ll=${lon}%2C${lat}&mode=poi&origin=jsapi21&poi%5Bpoint%5D=${poiLon}%2C${poiLat}&poi%5Buri%5D=ymapsbm1%3A%2F%2Forg%3Foid%3D${oid}&tab=features&z=16.93`;
+    var productsLink = `https://yandex.ru/maps/?from=api-maps&ll=${lon}%2C${lat}&mode=poi&origin=jsapi21&poi%5Bpoint%5D=${poiLon}%2C${poiLat}&poi%5Buri%5D=ymapsbm1%3A%2F%2Forg%3Foid%3D${oid}&tab=menu&z=16.93`;
+
+    document.getElementById('mapIframe').value = mapSrc;
+    document.getElementById('routeLink').value = routeLink;
+    document.getElementById('reviewsLink').value = reviewsLink;
+    document.getElementById('featuresLink').value = featuresLink;
+    document.getElementById('productsLink').value = productsLink;
+    
+    alert('Ссылки на карту, маршрут, отзывы и меню успешно сгенерированы!');
 }
 
 function generate(){
     var existingCode = val('existingCode');
     var isEditMode = existingCode.length > 0;
 
-    // 1. СБОР ДАННЫХ ИЗ ПАРСЕРА
-    var parsed = { photos: [], videos: [], models: [], buttons: [] };
+    // 1. ПАРСИНГ СТАРОГО КОДА (Поддерживает любые прошлые версии)
+    var parsed = { photos: [], videos: [], models: [], buttons: [], mapSrc: '', name: '', subtitle: '' };
     if (isEditMode) {
-        var mPhotos = existingCode.match(/var photos = (\[[\s\S]*?\]);/);
-        if (mPhotos) try { parsed.photos = JSON.parse(mPhotos[1]); } catch(e){}
-        
+        var tempDiv = document.createElement('div');
+        tempDiv.innerHTML = existingCode;
+
+        // Текст
+        var hEl = tempDiv.querySelector('._h');
+        if(hEl) parsed.name = hEl.innerText.trim();
+        var sEl = tempDiv.querySelector('._s');
+        if(sEl) parsed.subtitle = sEl.innerText.trim();
+
+        // Фото
+        var photoImgs = tempDiv.querySelectorAll('.slider-slide img');
+        photoImgs.forEach(function(img){ if(img.src) parsed.photos.push(img.src); });
+        if(parsed.photos.length === 0) {
+            var mPhotos = existingCode.match(/var photos = (\[[\s\S]*?\]);/);
+            if (mPhotos) try { parsed.photos = JSON.parse(mPhotos[1]); } catch(e){}
+        }
+
+        // Карта
+        var mapIframe = tempDiv.querySelector('._m1 iframe');
+        if(mapIframe) parsed.mapSrc = mapIframe.src;
+
+        // Видео
         var mVideos = existingCode.match(/var videoEmbedUrls = (\[[\s\S]*?\]);/);
         if (mVideos) try { parsed.videos = JSON.parse(mVideos[1]); } catch(e){}
-        
+        if(parsed.videos.length === 0) {
+            var vidIframes = tempDiv.querySelectorAll('._video-item iframe');
+            vidIframes.forEach(function(ifr){ if(ifr.src) parsed.videos.push(ifr.src); });
+        }
+
+        // Модели
         var mModels = existingCode.match(/var model3dUrls = (\[[\s\S]*?\]);/);
         if (mModels) try { parsed.models = JSON.parse(mModels[1]); } catch(e){}
-        
-        var mButtons = existingCode.match(/var mainButtons = (\[[\s\S]*?\]);/);
-        if (mButtons) try { parsed.buttons = JSON.parse(mButtons[1]); } catch(e){}
+        if(parsed.models.length === 0) {
+            var modelIframe = tempDiv.querySelector('#model3dIframe');
+            if(modelIframe && modelIframe.src) parsed.models.push(modelIframe.src);
+        }
+
+        // Кнопки (вытаскиваем из HTML)
+        var btnEls = tempDiv.querySelectorAll('._scrollButtons .btn');
+        btnEls.forEach(function(btn) {
+            var href = btn.getAttribute('href');
+            var text = btn.textContent.trim();
+            var onclick = btn.getAttribute('onclick');
+            if(href && href !== 'javascript:void(0)' && href.indexOf('javascript') === -1) {
+               parsed.buttons.push({label: text, href: href, target: '_blank'});
+            } else if(text) {
+               parsed.buttons.push({label: text, onclick: onclick || 'showMap()'}); // fallback
+            }
+        });
+        if(parsed.buttons.length === 0) {
+            var mButtons = existingCode.match(/var mainButtons = (\[[\s\S]*?\]);/);
+            if (mButtons) try { parsed.buttons = JSON.parse(mButtons[1]); } catch(e){}
+        }
     }
 
     // 2. ПРИМЕНЕНИЕ НОВЫХ ДАННЫХ ИЗ ФОРМЫ
-    var name=val('name')||'НАЗВАНИЕ';
-    var subtitle=val('subtitle');
+    var name = val('name') || parsed.name || 'НАЗВАНИЕ';
+    var subtitle = val('subtitle') || parsed.subtitle || '';
     var ogImage=val('ogImage');
     var ogUrl=val('ogUrl');
     var allowedDomain=val('allowedDomain')||'cz60182.tw1.ru';
     var radioUrl=val('radioUrl')||'https://montecarlo.hostingradio.ru/montecarlo96.aacp';
     
-    var mapSrc=extractIframeSrc(val('mapIframe'));
+    var mapSrc=val('mapIframe');
     if(chk('del_map')) mapSrc = '';
+    if(!mapSrc) mapSrc = parsed.mapSrc;
     
     var routeLink=val('routeLink');
     var reviewsLink=val('reviewsLink');
@@ -292,7 +382,7 @@ function generate(){
             newPhotos.forEach(function(p){ if(!finalPhotos.includes(p)) finalPhotos.push(p); });
         }
     }
-    if(finalPhotos.length === 0) finalPhotos = ["https://avatars.mds.yandex.net/get-altay/21116552/2a000001a14e57b3a455a7acd1a9412a90c0/XXL"]; // Заглушка
+    if(finalPhotos.length === 0) finalPhotos = ["https://avatars.mds.yandex.net/get-altay/21116552/2a000001a14e57b3a455a7acd1a9412a90c0/XXL"];
     
     var smartRandom=chk('smartRandom');
     var phoneNumbers=phone2?[phone1,phone2]:(phone1?[phone1]:[]);
@@ -336,17 +426,17 @@ function generate(){
 
     // --- КНОПКИ ---
     var finalButtons = parsed.buttons;
-    // Удаление старых, если стоит галочка
-    if(chk('del_route')) finalButtons = finalButtons.filter(function(b){ return b.label !== 'ПРОЛОЖИТЬ МАРШРУТ'; });
+    // Удаление
+    if(chk('del_route')) finalButtons = finalButtons.filter(function(b){ return b.label !== 'ПРОЛОЖИТЬ МАРШРУТ' && b.label !== 'МАРШРУТ'; });
     if(chk('del_reviews')) finalButtons = finalButtons.filter(function(b){ return b.label !== 'ОТЗЫВЫ'; });
-    if(chk('del_products')) finalButtons = finalButtons.filter(function(b){ return b.label !== 'ТОВАРЫ И УСЛУГИ'; });
+    if(chk('del_products')) finalButtons = finalButtons.filter(function(b){ return b.label !== 'ТОВАРЫ И УСЛУГИ' && b.label !== 'МЕНЮ'; });
     if(chk('del_features')) finalButtons = finalButtons.filter(function(b){ return b.label !== 'ОСОБЕННОСТИ'; });
     if(chk('del_site')) finalButtons = finalButtons.filter(function(b){ return b.label !== 'САЙТ'; });
-    if(chk('del_tg')) finalButtons = finalButtons.filter(function(b){ return b.label !== 'ТЕЛЕГРАММ'; });
+    if(chk('del_tg')) finalButtons = finalButtons.filter(function(b){ return b.label !== 'ТЕЛЕГРАММ' && b.label !== 'TELEGRAM'; });
     if(chk('del_wa')) finalButtons = finalButtons.filter(function(b){ return b.label !== 'ВАТСАП'; });
     if(chk('del_max')) finalButtons = finalButtons.filter(function(b){ return b.label !== 'МАКС'; });
     if(chk('del_insta')) finalButtons = finalButtons.filter(function(b){ return b.label !== 'ИНСТАГРАМ'; });
-    if(chk('del_vk')) finalButtons = finalButtons.filter(function(b){ return b.label !== 'В КОНТАКТЕ'; });
+    if(chk('del_vk')) finalButtons = finalButtons.filter(function(b){ return b.label !== 'В КОНТАКТЕ' && b.label !== 'VK'; });
     if(chk('del_ok')) finalButtons = finalButtons.filter(function(b){ return b.label !== 'ОДНОКЛАССНИКИ'; });
 
     // Добавление новых
@@ -366,7 +456,6 @@ function generate(){
     if(vkLink) finalButtons.push({label:'В КОНТАКТЕ',href:vkLink,target:'_blank'});
     if(okLink) finalButtons.push({label:'ОДНОКЛАССНИКИ',href:okLink,target:'_blank'});
     
-    // Свободные кнопки
     for(var i=1; i<=5; i++){
         var fName = val('freeName'+i);
         var fUrl = val('freeUrl'+i);
@@ -376,13 +465,25 @@ function generate(){
     if (finalVideos.length > 0) finalButtons.push({label:'ВИДЕО',onclick:'showVideo()'});
     if (finalModels.length > 0) finalButtons.push({label:'3D МОДЕЛЬ',onclick:'showModel3d()'});
 
-    // Удаление дубликатов из finalButtons (по label)
+    // Удаление дубликатов
     var uniqueButtons = [];
     var seenLabels = {};
     finalButtons.forEach(function(b) {
         if(!seenLabels[b.label]) { seenLabels[b.label] = true; uniqueButtons.push(b); }
     });
     finalButtons = uniqueButtons;
+
+    // --- НАША КНОПКА ---
+    var ourBtnActive = chk('ourBtnActive') && !chk('ourBtnDelete');
+    var ourBtnColor = val('ourBtnColor');
+    var ourBtnBg = '#ffffff', ourBtnText = '#000000', ourBtnBorder = '#cccccc';
+    if(ourBtnColor === 'black') { ourBtnBg = '#000000'; ourBtnText = '#ffffff'; ourBtnBorder = '#333333'; }
+    if(ourBtnColor === 'gray') { ourBtnBg = '#6c757d'; ourBtnText = '#ffffff'; ourBtnBorder = '#5a6268'; }
+    
+    var ourBtnHtml = '';
+    if(ourBtnActive) {
+        ourBtnHtml = `<a href="https://cz60182.tw1.ru/VRREALLENDING_/index.html" target="_blank" class="btn-static" style="text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; background:${ourBtnBg}; color:${ourBtnText}; border:1px solid ${ourBtnBorder}; font-weight:bold; height:44px; margin-top:2px;"><img src="https://avatars.mds.yandex.net/get-yapic/18057972/Of84ti5hPQND8Fu5hTng8zKfY-1/islands-200" style="height:22px; width:22px; border-radius:50%; object-fit:cover;"> VRREAL360</a>`;
+    }
 
     // --- ФОРМИРОВАНИЕ JS ---
     var dynJs='[\n'+finalButtons.map(function(b){
@@ -590,7 +691,7 @@ function generate(){
                         <button class="btn-static burgundy-btn sound-toggle" onclick="toggleSound()" style="border-right:1px solid ${bgColor};">ВКЛЮЧИТЬ ЗВУК</button>
                         <button class="btn-static burgundy-btn" id="controlsToggleBtn" onclick="toggleControls()">УБРАТЬ КНОПКИ</button>
                     </div>
-                    ${chk('ourBtnActive') && !chk('ourBtnDelete') ? `<a href="https://cz60182.tw1.ru/VRREALLENDING_/index.html" target="_blank" class="btn-static" style="text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; background:#000; color:#fff; font-weight:bold;"><img src="https://avatars.mds.yandex.net/get-yapic/18057972/Of84ti5hPQND8Fu5hTng8zKfY-1/islands-200" style="height:22px; width:22px; border-radius:50%; object-fit:cover;"> VRREAL360</a>` : ''}
+                    ${ourBtnHtml}
                 </div>
             </div>
 
