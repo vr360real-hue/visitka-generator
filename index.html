@@ -229,7 +229,7 @@ function parseAndFill() {
     
     if(ogDescMatch) subtitle = ogDescMatch[1];
 
-    // Эвристика для сплошного текста (если нет HTML тегов)
+    // Эвристика для сплошного текста
     if(!name && !text.includes('<')) {
         var lines = text.split('\n').map(function(l){return l.trim();}).filter(function(l){return l;});
         if(lines.length > 0 && !lines[0].includes('http') && !lines[0].includes('tel:')) name = lines[0];
@@ -240,7 +240,7 @@ function parseAndFill() {
     if(subtitle) document.getElementById('subtitle').value = subtitle;
     if(ogImgMatch) document.getElementById('ogImage').value = ogImgMatch[1];
 
-    // 2. Все ссылки и телефоны (Regex)
+    // 2. Все ссылки и телефоны
     var urls = text.match(/(https?:\/\/[^\s"'<>]+)/gi) || [];
     var telMatches = text.match(/(?:\+7|8)[\s\-\(]*\d{3}[\s\-\)]*\d{3}[\s\-]*\d{2}[\s\-]*\d{2}/g) || text.match(/tel:([^\s"'<>]+)/gi) || [];
     
@@ -259,12 +259,18 @@ function parseAndFill() {
 
     var mapSrc = '', routeLink = '', reviewsLink = '', featuresLink = '', productsLink = '';
     var tourUrl = '', siteLink = '', tgLink = '', waLink = '', vkLink = '', okLink = '', instaLink = '', maxLink = '';
-    var bookingUrl = '';
+    var freeIndex = 1;
+
+    // Очистка свободных кнопок перед парсингом
+    for(var i=1; i<=5; i++) {
+        document.getElementById('freeName'+i).value = '';
+        document.getElementById('freeUrl'+i).value = '';
+    }
 
     urls.forEach(function(url) {
         url = url.replace(/&amp;/g, '&');
         if (url.includes('VRREALLENDING')) { document.getElementById('ourBtnActive').checked = true; return; }
-        
+
         if (url.includes('yandex') && url.includes('map-widget')) {
             if (!mapSrc) mapSrc = url;
         }
@@ -281,6 +287,26 @@ function parseAndFill() {
         else if (url.includes('ok.ru')) { if (!okLink) okLink = url; }
         else if (url.includes('instagram.com')) { if (!instaLink) instaLink = url; }
         else if (url.includes('max.ru')) { if (!maxLink) maxLink = url; }
+        else if (url.includes('rutube') || url.includes('sketchfab') || url.includes('avatars.mds.yandex') || url.includes('yapic')) {
+            // Игнорируем, обрабатываем отдельно
+        }
+        else if (url.includes('yandex') && url.includes('redirect.appmetrica')) {
+            if (freeIndex <= 5) {
+                document.getElementById('freeName'+freeIndex).value = 'ЯНДЕКС ТАКСИ';
+                document.getElementById('freeUrl'+freeIndex).value = url;
+                freeIndex++;
+            }
+        }
+        else {
+            // Остальные ссылки - на сайт или в свободные
+            if (!siteLink && !url.includes('.png') && !url.includes('.jpg') && !url.includes('.svg')) {
+                siteLink = url;
+            } else if (freeIndex <= 5) {
+                document.getElementById('freeName'+freeIndex).value = 'ССЫЛКА';
+                document.getElementById('freeUrl'+freeIndex).value = url;
+                freeIndex++;
+            }
+        }
     });
 
     if(mapSrc) document.getElementById('mapIframe').value = mapSrc;
@@ -295,14 +321,6 @@ function parseAndFill() {
         document.getElementById('phone1Link').value = phone1Link;
     }
 
-    // 3. Сайт (ищем ссылку, которая не является соцсетью, картой или картинкой)
-    urls.forEach(function(url) {
-        if (!url.includes('yandex') && !url.includes('vk.') && !url.includes('t.me') && !url.includes('wa.me') && 
-            !url.includes('ok.ru') && !url.includes('instagram') && !url.includes('rutube') && !url.includes('sketchfab') && 
-            !url.includes('avatars.mds') && !url.includes('yapic') && !url.includes('.png') && !url.includes('.jpg') && !url.includes('.svg')) {
-            if (!siteLink) siteLink = url;
-        }
-    });
     if(siteLink) document.getElementById('siteLink').value = siteLink;
     if(tgLink) document.getElementById('tgLink').value = tgLink;
     if(waLink) document.getElementById('waLink').value = waLink;
@@ -311,35 +329,59 @@ function parseAndFill() {
     if(instaLink) document.getElementById('instaLink').value = instaLink;
     if(maxLink) document.getElementById('maxLink').value = maxLink;
 
-    // 4. Видео Rutube (ищем 32-символьные хэши)
+    // 3. ВИДЕО Rutube (Точный поиск)
     var videos = [];
-    var rutubeMatches = text.match(/rutube\.ru\/(?:video|embed)\/([a-f0-9]{32})/gi) || text.match(/[a-f0-9]{32}/gi); // На случай, если вставлен просто ID
-    if (rutubeMatches) {
-        rutubeMatches.forEach(function(m) {
-            var idMatch = m.match(/([a-f0-9]{32})/i);
-            if(idMatch) {
+    // Ищем полные ссылки
+    var rutubeUrlMatches = text.match(/https?:\/\/rutube\.ru\/(?:video|embed)\/([a-zA-Z0-9]+)/gi);
+    if (rutubeUrlMatches) {
+        rutubeUrlMatches.forEach(function(m) {
+            var idMatch = m.match(/\/([a-zA-Z0-9]+)\/?$/);
+            if (idMatch) {
                 var embed = 'https://rutube.ru/embed/' + idMatch[1] + '/';
                 if(!videos.includes(embed)) videos.push(embed);
             }
         });
     }
+    // Ищем массив videoIds
+    var idsArrayMatch = text.match(/videoIds\s*=\s*\[([^\]]+)\]/i);
+    if (idsArrayMatch) {
+        var idStrings = idsArrayMatch[1].match(/["']([^"']+)["']/g);
+        if (idStrings) {
+            idStrings.forEach(function(str) {
+                var id = str.replace(/["']/g, '').trim();
+                if (id.length > 10) {
+                    var embed = 'https://rutube.ru/embed/' + id + '/';
+                    if(!videos.includes(embed)) videos.push(embed);
+                }
+            });
+        }
+    }
     if(videos.length > 0) document.getElementById('videosRutube').value = videos.join('\n');
 
-    // 5. Модели Sketchfab (ищем ID)
+    // 4. МОДЕЛИ Sketchfab (Точный поиск)
     var models = [];
-    var sketchfabMatches = text.match(/sketchfab\.com\/(?:models|3d-models)\/([a-zA-Z0-9]+)/gi);
+    var sketchfabMatches = text.match(/https?:\/\/sketchfab\.com\/models\/([a-zA-Z0-9]+)/gi);
     if (sketchfabMatches) {
         sketchfabMatches.forEach(function(m) {
-            var idMatch = m.match(/\/([a-zA-Z0-9]+)$/);
+            var idMatch = m.match(/models\/([a-zA-Z0-9]+)/i);
             if(idMatch) {
                 var embed = 'https://sketchfab.com/models/' + idMatch[1] + '/embed';
                 if(!models.includes(embed)) models.push(embed);
             }
         });
     }
+    // Если модель вставлена просто URL без /models/
+    if(models.length === 0) {
+        var modelUrlMatch = text.match(/https?:\/\/sketchfab\.com\/[^\s"'<>]+/gi);
+        if (modelUrlMatch) {
+            modelUrlMatch.forEach(function(m) {
+                if (!models.includes(m)) models.push(m);
+            });
+        }
+    }
     if(models.length > 0) document.getElementById('models3d').value = models.join('\n');
 
-    // 6. Фотографии
+    // 5. Фотографии
     var photos = [];
     var imgMatches = text.match(/https?:\/\/avatars\.mds\.yandex\.net\/[^\s"'<>]+/gi);
     if (imgMatches) {
@@ -347,7 +389,6 @@ function parseAndFill() {
             if(!url.includes('islands') && !photos.includes(url)) photos.push(url);
         });
     }
-    // Если фото вообще не найдены, но есть обычные картинки
     if(photos.length === 0) {
         var otherImg = text.match(/https?:\/\/[^\s"'<>]+\.(?:jpg|jpeg|png|webp)/gi);
         if(otherImg) {
@@ -430,7 +471,7 @@ function generate(){
     var rutubeLinks = val('videosRutube').split('\n').map(function(l){return l.trim();}).filter(function(l){return l;});
     var otherLinks = val('videosOther').split('\n').map(function(l){return l.trim();}).filter(function(l){return l;});
     var newVideos = rutubeLinks.map(function(l) {
-        var match = l.match(/([a-f0-9]{32})/);
+        var match = l.match(/([a-zA-Z0-9]{32})/);
         if (match) return 'https://rutube.ru/embed/' + match[1] + '/';
         return l;
     }).concat(otherLinks);
