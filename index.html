@@ -3,7 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Генератор визиток PRO</title>
+<title>GENERATOR</title>
+
+<!-- НАСТРОЙКИ ДЛЯ МЕССЕНДЖЕРОВ (OG) -->
+<meta property="og:title" content="GENERATOR" />
+<meta property="og:description" content="Генератор визиток PRO" />
+<meta property="og:image" content="https://avatars.mds.yandex.net/get-altay/22248647/2a000001a15ead1c08c22526aa64b57f7451/XXL" />
+<meta property="og:url" content="https://vr360real-hue.github.io/visita-generator/index.html" />
+<meta property="og:type" content="website" />
+
 <style>
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f4f6f8;color:#222;padding:20px;margin:0}
 .wrap{max-width:1000px;margin:0 auto}
@@ -36,45 +44,14 @@ input[type=color]{padding:2px;height:36px;cursor:pointer}
 .del-check input{width:auto;height:14px;accent-color:#e74c3c;}
 .hint{font-size:11px;color:#888;margin-top:4px;line-height:1.4}
 .free-row{display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-bottom:8px}
-
-/* Стили для макета телефона */
-.phone-mockup {
-    width: 350px;
-    height: 700px;
-    margin: 20px auto;
-    border: 14px solid #1a1a1a;
-    border-radius: 40px;
-    background: #000;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
-    box-sizing: content-box;
-}
-.phone-mockup::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 120px;
-    height: 20px;
-    background: #1a1a1a;
-    border-bottom-left-radius: 12px;
-    border-bottom-right-radius: 12px;
-    z-index: 10;
-}
-.phone-mockup iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-    background: #fff;
-    display: block;
-}
+.phone-mockup{width:350px;height:700px;margin:20px auto;border:14px solid #1a1a1a;border-radius:40px;background:#000;position:relative;overflow:hidden;box-shadow:0 15px 40px rgba(0,0,0,0.3);box-sizing:content-box}
+.phone-mockup::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:20px;background:#1a1a1a;border-bottom-left-radius:12px;border-bottom-right-radius:12px;z-index:10}
+.phone-mockup iframe{width:100%;height:100%;border:none;background:#fff;display:block}
 </style>
 </head>
 <body>
 <div class="wrap">
-<h1>Генератор визиток PRO</h1>
+<h1>GENERATOR</h1>
 <div class="sub">Создавай, редактируй, проверяй!</div>
 
 <form id="form" onsubmit="event.preventDefault();generate();">
@@ -106,7 +83,9 @@ input[type=color]{padding:2px;height:36px;cursor:pointer}
 <div class="section">
 <h2>2. Карта и Яндекс.Карты</h2>
 <div style="margin-bottom:8px;"><label>Карта (iframe или src) <label class="del-check"><input type="checkbox" id="del_map"> УДАЛИТЬ</label></label>
-<textarea id="mapIframe" placeholder="<iframe src='...'></iframe> или https://yandex.ru/map-widget/v1/?..."></textarea></div>
+<textarea id="mapIframe" placeholder="Вставь код iframe или ссылку map-widget/v1/..."></textarea>
+<div class="hint">Кнопка «НА КАРТУ» откроет встроенную карту внутри визитки.</div>
+</div>
 <div class="row">
 <div><label>Маршрут <label class="del-check"><input type="checkbox" id="del_route"> УДАЛИТЬ</label></label><input type="text" id="routeLink"></div>
 <div><label>Отзывы <label class="del-check"><input type="checkbox" id="del_reviews"> УДАЛИТЬ</label></label><input type="text" id="reviewsLink"></div>
@@ -274,6 +253,13 @@ function extractDataFromCode(code) {
     var logoMeta = doc.querySelector('meta[property="og:image"]');
     data.ogImage = logoMeta ? logoMeta.content : '';
 
+    // Map iframe
+    var mapIframe = doc.querySelector('._m1 iframe') || doc.querySelector('iframe[src*="map-widget"]');
+    if (mapIframe) {
+        var src = mapIframe.getAttribute('src') || mapIframe.src;
+        if (src) data.mapSrc = src;
+    }
+
     var urls = code.match(/(https?:\/\/[^\s"'<>]+)/gi) || [];
     var telMatches = code.match(/(?:\+7|8)[\s\-\(]*\d{3}[\s\-\)]*\d{3}[\s\-]*\d{2}[\s\-]*\d{2}/g) || code.match(/tel:([^\s"'<>]+)/gi) || [];
     
@@ -314,6 +300,10 @@ function extractDataFromCode(code) {
             if (!data.siteLink && !url.includes('.png') && !url.includes('.jpg') && !url.includes('.svg')) { data.siteLink = url; }
         }
     });
+
+    // 3D тур из mainButtons
+    var tourFromButtons = code.match(/\["3D ТУР",\s*"([^"]+)"/);
+    if (tourFromButtons && tourFromButtons[1]) data.tourUrl = tourFromButtons[1];
 
     var imgMatches = code.match(/https?:\/\/avatars\.mds\.yandex\.net\/[^\s"'<>]+/gi) || code.match(/https?:\/\/[^\s"'<>]+\.(?:jpg|jpeg|png|webp)/gi);
     if (imgMatches) {
@@ -398,7 +388,6 @@ function parseAndFill() {
     if(data.videos.length > 0) document.getElementById('videosRutube').value = data.videos.join('\n');
     if(data.models.length > 0) document.getElementById('models3d').value = data.models.join('\n');
 
-    // Свободные кнопки
     for(var i=1; i<=5; i++) {
         document.getElementById('freeName'+i).value = '';
         document.getElementById('freeUrl'+i).value = '';
@@ -417,7 +406,6 @@ function parseAndFill() {
         document.getElementById('ourBtnDelete').checked = false;
     }
 
-    // Сброс всех галочек удаления
     var delChecks = ['del_map','del_route','del_reviews','del_products','del_features','del_phone1','del_booking','del_site','del_tg','del_wa','del_max','del_insta','del_vk','del_ok','del_tour','del_photos','del_videos','del_models'];
     delChecks.forEach(function(id){ if(document.getElementById(id)) document.getElementById(id).checked = false; });
 
@@ -425,11 +413,9 @@ function parseAndFill() {
 }
 
 function generate(){
-    // 1. Берем данные из старого кода (если он есть)
     var existingCode = val('existingCode');
     var parsed = extractDataFromCode(existingCode);
 
-    // 2. Собираем данные из формы (если поле пустое - берем из старого кода)
     var name = val('name') || parsed.name || 'НАЗВАНИЕ';
     var subtitle = val('subtitle') || parsed.subtitle || '';
     var ogImage = val('ogImage') || parsed.ogImage || '';
@@ -437,9 +423,15 @@ function generate(){
     var allowedDomain = val('allowedDomain') || 'cz60182.tw1.ru';
     var radioUrl = val('radioUrl') || 'https://montecarlo.hostingradio.ru/montecarlo96.aacp';
 
-    // 3. Применяем логику удаления и добавления
-    var mapSrc = val('mapIframe') || parsed.mapSrc || '';
-    if(chk('del_map')) mapSrc = '';
+    // ===== КАРТА (встроенная) =====
+    var mapSrc = val('mapIframe');
+    if (mapSrc && mapSrc.indexOf('<') !== -1) {
+        var m = mapSrc.match(/src=["']([^"']+)["']/i);
+        if (m) mapSrc = m[1];
+    }
+    if (!mapSrc) mapSrc = parsed.mapSrc;
+    mapSrc = (mapSrc || '').replace(/&amp;/g, '&').trim();
+    if (chk('del_map')) mapSrc = '';
 
     var routeLink = val('routeLink') || parsed.routeLink || '';
     if(chk('del_route')) routeLink = '';
@@ -486,7 +478,6 @@ function generate(){
     var tourSingleUrl = val('tourSingleUrl') || parsed.tourUrl || '';
     if(tourMode === 'none') tourSingleUrl = '';
 
-    // 4. Логика для массивов (Фото, Видео, Модели)
     // ФОТО
     var parsedPhotos = parsed.photos || [];
     var inputPhotos = val('photos').split('\n').map(function(l){return l.trim();}).filter(function(l){return l && l.indexOf('http')===0;});
@@ -495,7 +486,7 @@ function generate(){
         if (inputPhotos.length > 0) {
             finalPhotos = parsedPhotos.filter(function(p){ return !inputPhotos.includes(p); });
         } else {
-            finalPhotos = []; // Удалить все
+            finalPhotos = [];
         }
     } else {
         finalPhotos = parsedPhotos.slice();
@@ -517,7 +508,7 @@ function generate(){
         if (inputVideos.length > 0) {
             finalVideos = parsedVideos.filter(function(v){ return !inputVideos.includes(v); });
         } else {
-            finalVideos = []; // Удалить все
+            finalVideos = [];
         }
     } else {
         finalVideos = parsedVideos.slice();
@@ -536,18 +527,18 @@ function generate(){
         if (inputModels.length > 0) {
             finalModels = parsedModels.filter(function(m){ return !inputModels.includes(m); });
         } else {
-            finalModels = []; // Удалить все
+            finalModels = [];
         }
     } else {
         finalModels = parsedModels.slice();
         inputModels.forEach(function(m){ if(!finalModels.includes(m)) finalModels.push(m); });
     }
 
-    // 5. Наша кнопка
+    // Наша кнопка
     var ourBtnActive = chk('ourBtnActive') || parsed.hasOurBtn;
     if (chk('ourBtnDelete')) ourBtnActive = false;
 
-    // 6. Свободные кнопки
+    // Свободные кнопки
     var freeButtons = [];
     for(var i=1; i<=5; i++){
         var fName = val('freeName'+i);
@@ -555,37 +546,40 @@ function generate(){
         if(fName && fUrl) freeButtons.push({name:fName, url:fUrl});
     }
 
-    // 7. Сборка массива кнопок
+    // СБОРКА КНОПОК
     var finalButtons = [];
-    if(tourMode==='multi') finalButtons.push({label:'3D ТУР',onclick:'enter3DMode()'});
-    else if(tourMode==='single'&&tourSingleUrl) finalButtons.push({label:'3D ТУР',href:tourSingleUrl,target:'_blank'});
-    if(mapSrc) finalButtons.push({label:'НА КАРТУ',onclick:'showMap()'});
-    if(routeLink) finalButtons.push({label:'ПРОЛОЖИТЬ МАРШРУТ',href:routeLink,target:'_blank'});
-    if(reviewsLink) finalButtons.push({label:'ОТЗЫВЫ',href:reviewsLink,target:'_blank'});
-    if(productsLink) finalButtons.push({label:'ТОВАРЫ И УСЛУГИ',href:productsLink,target:'_blank'});
-    if(featuresLink) finalButtons.push({label:'ОСОБЕННОСТИ',href:featuresLink,target:'_blank'});
-    if(siteLink) finalButtons.push({label:'САЙТ',href:siteLink,target:'_blank'});
-    if(tgLink) finalButtons.push({label:'ТЕЛЕГРАММ',href:tgLink,target:'_blank'});
-    if(waLink) finalButtons.push({label:'ВАТСАП',href:waLink,target:'_blank'});
-    if(maxLink) finalButtons.push({label:'МАКС',href:maxLink,target:'_blank'});
-    if(instaLink) finalButtons.push({label:'ИНСТАГРАМ',href:instaLink,target:'_blank'});
-    if(vkLink) finalButtons.push({label:'В КОНТАКТЕ',href:vkLink,target:'_blank'});
-    if(okLink) finalButtons.push({label:'ОДНОКЛАССНИКИ',href:okLink,target:'_blank'});
-    freeButtons.forEach(function(b){ finalButtons.push({label:b.name, href:b.url, target:'_blank'}); });
-    if (finalVideos.length > 0) finalButtons.push({label:'ВИДЕО',onclick:'showVideo()'});
-    if (finalModels.length > 0) finalButtons.push({label:'3D МОДЕЛЬ',onclick:'showModel3d()'});
+    if(tourMode==='multi') finalButtons.push({label:'3D ТУР',onclick:'enter3DMode'});
+    else if(tourMode==='single'&&tourSingleUrl) finalButtons.push({label:'3D ТУР',href:tourSingleUrl});
+    
+    if(mapSrc) finalButtons.push({label:'НА КАРТУ',onclick:'showMap'});
+    
+    if(routeLink) finalButtons.push({label:'ПРОЛОЖИТЬ МАРШРУТ',href:routeLink});
+    if(reviewsLink) finalButtons.push({label:'ОТЗЫВЫ',href:reviewsLink});
+    if(productsLink) finalButtons.push({label:'ТОВАРЫ И УСЛУГИ',href:productsLink});
+    if(featuresLink) finalButtons.push({label:'ОСОБЕННОСТИ',href:featuresLink});
+    if(siteLink) finalButtons.push({label:'САЙТ',href:siteLink});
+    if(tgLink) finalButtons.push({label:'ТЕЛЕГРАММ',href:tgLink});
+    if(waLink) finalButtons.push({label:'ВАТСАП',href:waLink});
+    if(maxLink) finalButtons.push({label:'МАКС',href:maxLink});
+    if(instaLink) finalButtons.push({label:'ИНСТАГРАМ',href:instaLink});
+    if(vkLink) finalButtons.push({label:'В КОНТАКТЕ',href:vkLink});
+    if(okLink) finalButtons.push({label:'ОДНОКЛАССНИКИ',href:okLink});
+    freeButtons.forEach(function(b){ finalButtons.push({label:b.name, href:b.url}); });
+    if (finalVideos.length > 0) finalButtons.push({label:'ВИДЕО',onclick:'showVideo'});
+    if (finalModels.length > 0) finalButtons.push({label:'3D МОДЕЛЬ',onclick:'showModel3d'});
 
-    // 8. Генерация JS кода
-    var dynJs='[\n'+finalButtons.map(function(b){
-        var parts=['label:'+jsStr(b.label)];
-        if(b.href) parts.push('href:'+jsStr(b.href));
-        if(b.onclick) parts.push('onclick:'+jsStr(b.onclick));
-        if(b.target) parts.push('target:'+jsStr(b.target));
-        return '            {'+parts.join(', ')+'}';
-    }).join(',\n')+'\n        ]';
+    // JS массив кнопок (3 элемента: [label, href, onclick_fn])
+    var dynJs = '[\n' + finalButtons.map(function(b) {
+        var parts = [jsStr(b.label)];
+        if (b.href) parts.push(jsStr(b.href));
+        else parts.push('null');
+        if (b.onclick) parts.push(b.onclick);
+        else parts.push('null');
+        return '            [' + parts.join(', ') + ']';
+    }).join(',\n') + '\n        ]';
 
     var photosJs='var photos = [\n'+finalPhotos.map(function(p){return '            '+jsStr(p);}).join(',\n')+'\n        ];';
-    var phonesJs='var phoneNumbers = '+(phone1 ? JSON.stringify(phone2?[phone1,phone2]:[phone1]) : '[]')+';\n        var phoneLinks = '+(phone1 ? JSON.stringify(phone2?[phone1Link,phone2Link]:[phone1Link]) : '[]')+';';
+    var phonesJs='var phoneNumbers = '+(phone1 ? JSON.stringify(val('phone2')?[phone1,val('phone2')]:[phone1]) : '[]')+';\n        var phoneLinks = '+(phone1 ? JSON.stringify(val('phone2')?[phone1Link,val('phone2Link')]:[phone1Link]) : '[]')+';';
 
     var smartRandom=chk('smartRandom');
     var slideLogicJs;
@@ -696,7 +690,7 @@ function generate(){
         ._h { display:flex; align-items:center; justify-content:center; gap:6px; font-weight:700; font-size:15px; color:${dynText}; padding:0; height:32px; flex-shrink:0; cursor:pointer; background:${bgColor}; text-shadow:none; width:100%; letter-spacing:0.3px; border-bottom:1px solid #e0e0e0; }
         ._s { font-size:9px; color:#777; text-align:center; background:${bgColor}; letter-spacing:0.5px; padding:0; height:16px; line-height:16px; flex-shrink:0; width:100%; border-bottom:1px solid #e0e0e0; }
         ._mw { width:100%; flex:1 1 auto; position:relative; display:flex; flex-direction:column; overflow:hidden; border-radius:0; margin:0; background:transparent; }
-        ._mw ._m1, ._mw ._g, ._mw ._v, ._mw ._model3d { display:none; flex-direction:column; width:100%; height:100%; background:${bgColor}; border-radius:0; overflow:hidden; flex:1 0 100%; position:relative; }
+        ._mw ._m1, ._mw ._g, ._mw ._v, ._mw ._model3d { display:none; flex-direction:column; width:100%; height:100%; background:${bgColor}; border-radius:0; overflow:hidden; flex:1 0 100%; }
         ._mw .active-widget { display:flex !important; }
         ._mw ._m1 ._map-wrap { flex:1; position:relative; overflow:hidden; }
         ._mw ._m1 ._map-wrap iframe { width:100%; height:100%; border:0; display:block; position:absolute; top:0; left:0; }
@@ -853,6 +847,7 @@ function generate(){
         var back3DBtn = document.getElementById('back3DBtn');
         var isControlsVisible = true;
         var is3DMode = false;
+        
         function hideAllWidgets() {
             var arr = [mapWidget, galleryBlock, videoWidget, document.getElementById('model3dWidget')];
             arr.forEach(function(w) { if (w) w.classList.remove('active-widget'); });
@@ -902,6 +897,9 @@ function generate(){
         ${slideLogicJs}
         ${tourJs}
         ${tourLogicJs}
+        ${videoJs}
+        ${model3dJs}
+        
         function buildMainSlider() {
             sliderTrack.innerHTML = '';
             dotsContainer.innerHTML = '';
@@ -965,27 +963,28 @@ function generate(){
         document.getElementById('sliderBlocker').addEventListener('click', function(e) {
             if (galleryBlock.classList.contains('active-widget')) toggleControls();
         });
+        
         var mainButtons = ${dynJs};
+        
         function buildNormalButtons() {
             var scrollDiv = document.getElementById('buttonsScroll');
             scrollDiv.innerHTML = '';
             mainButtons.forEach(function(item) {
                 var btn = document.createElement('a');
-                if (item.onclick) {
+                if (item[1]) {
+                    btn.href = item[1];
+                    btn.target = '_blank';
+                } else if (item[2]) {
                     btn.href = 'javascript:void(0)';
-                    btn.onclick = function() { eval(item.onclick); };
-                } else if (item.href) {
-                    btn.href = item.href;
-                    if (item.target) btn.target = item.target;
+                    btn.onclick = item[2];
                 }
                 btn.className = 'btn';
-                btn.textContent = item.label;
+                btn.textContent = item[0];
                 scrollDiv.appendChild(btn);
             });
         }
         buildNormalButtons();
-        ${videoJs}
-        ${model3dJs}
+        
         var audioPlayer = null;
         var isMusicMuted = true;
         var RADIO_STREAM = ${jsStr(radioUrl)};
