@@ -25,7 +25,7 @@ input[type=text],input[type=color],textarea,select{width:100%;padding:8px 10px;b
 textarea{resize:vertical;min-height:60px}
 input[type=color]{padding:2px;height:36px;cursor:pointer}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:8px}
+.row3{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
 @media(max-width:700px){.row,.row3{grid-template-columns:1fr}}
 .btn-gen{display:block;width:100%;padding:14px;background:#24584b;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;margin-top:10px;letter-spacing:1px}
 .btn-gen:hover{background:#1a4137}
@@ -144,6 +144,9 @@ input[type=color]{padding:2px;height:36px;cursor:pointer}
 <h2>6. Цвета</h2>
 <div class="row3">
 <div><label>Общий фон</label><input type="color" id="bgColor" value="#ffffff"></div>
+<div><label>Цвет шапки</label><input type="color" id="headerColor" value="#07372b"></div>
+</div>
+<div class="row3">
 <div><label>Динамичные: фон</label><input type="color" id="dynBg" value="#ecf0ef"></div>
 <div><label>Динамичные: текст</label><input type="color" id="dynText" value="#07372b"></div>
 </div>
@@ -235,7 +238,8 @@ function extractDataFromCode(code) {
         name: '', subtitle: '', ogImage: '', mapSrc: '', routeLink: '', reviewsLink: '',
         productsLink: '', featuresLink: '', siteLink: '', tgLink: '', waLink: '',
         maxLink: '', instaLink: '', vkLink: '', okLink: '', phone1: '', phone1Link: '',
-        bookingUrl: '', tourUrl: '', photos: [], videos: [], models: [], hasOurBtn: false, freeButtons: []
+        bookingUrl: '', tourUrl: '', photos: [], videos: [], models: [], hasOurBtn: false, freeButtons: [],
+        headerColor: ''
     };
     if (!code) return data;
 
@@ -252,6 +256,10 @@ function extractDataFromCode(code) {
     data.subtitle = descMeta ? descMeta.content : '';
     var logoMeta = doc.querySelector('meta[property="og:image"]');
     data.ogImage = logoMeta ? logoMeta.content : '';
+
+    // Попытка вытащить цвет шапки из старых стилей
+    var hStyle = code.match(/\._h\s*\{[^}]*color:\s*(#[0-9a-fA-F]{3,6})/i);
+    if (hStyle) data.headerColor = hStyle[1];
 
     // Map iframe
     var mapIframe = doc.querySelector('._m1 iframe') || doc.querySelector('iframe[src*="map-widget"]');
@@ -360,6 +368,7 @@ function parseAndFill() {
     if(data.name) document.getElementById('name').value = data.name;
     if(data.subtitle) document.getElementById('subtitle').value = data.subtitle;
     if(data.ogImage) document.getElementById('ogImage').value = data.ogImage;
+    if(data.headerColor) document.getElementById('headerColor').value = data.headerColor;
     if(data.mapSrc) document.getElementById('mapIframe').value = data.mapSrc;
     if(data.routeLink) document.getElementById('routeLink').value = data.routeLink;
     if(data.reviewsLink) document.getElementById('reviewsLink').value = data.reviewsLink;
@@ -416,8 +425,13 @@ function generate(){
     var existingCode = val('existingCode');
     var parsed = extractDataFromCode(existingCode);
 
-    var name = val('name') || parsed.name || 'НАЗВАНИЕ';
-    var subtitle = val('subtitle') || parsed.subtitle || '';
+    // ЖЕСТКАЯ ЗАЩИТА ОТ ПУСТЫХ ЗНАЧЕНИЙ
+    var rawName = val('name') || parsed.name || '';
+    var rawSubtitle = val('subtitle') || parsed.subtitle || '';
+
+    var name = rawName.trim() !== '' ? rawName : 'НАЗВАНИЕ';
+    var subtitle = rawSubtitle.trim() !== '' ? rawSubtitle : 'ТИП ОБЪЕКТА, ГОРОД';
+
     var ogImage = val('ogImage') || parsed.ogImage || '';
     var ogUrl = val('ogUrl');
     var allowedDomain = val('allowedDomain') || 'cz60182.tw1.ru';
@@ -657,6 +671,7 @@ function generate(){
     }
 
     var bgColor=val('bgColor')||'#ffffff';
+    var headerColor=val('headerColor')||'#07372b';
     var dynBg=val('dynBg')||'#ecf0ef';
     var dynText=val('dynText')||'#07372b';
     var statBg=val('statBg')||'#24584b';
@@ -687,8 +702,8 @@ function generate(){
         @media (max-width:600px) { ._c { width:calc(100% - 4px); max-width:none; margin:0; } }
         ._bg-model { position:absolute; top:0; left:0; width:100%; height:100%; z-index:0; pointer-events:none; overflow:hidden; background:${bgColor}; }
         ._mp { position:relative; z-index:1; display:flex; flex-direction:column; width:100%; height:100%; background:transparent; }
-        ._h { display:flex; align-items:center; justify-content:center; gap:6px; font-weight:700; font-size:15px; color:${dynText}; padding:0; height:32px; flex-shrink:0; cursor:pointer; background:${bgColor}; text-shadow:none; width:100%; letter-spacing:0.3px; border-bottom:1px solid #e0e0e0; }
-        ._s { font-size:9px; color:#777; text-align:center; background:${bgColor}; letter-spacing:0.5px; padding:0; height:16px; line-height:16px; flex-shrink:0; width:100%; border-bottom:1px solid #e0e0e0; }
+        ._h { display:flex; align-items:center; justify-content:center; gap:6px; font-weight:700; font-size:15px; color:${headerColor}; padding:0; height:32px; flex-shrink:0; cursor:pointer; background:${bgColor}; text-shadow:none; width:100%; letter-spacing:0.3px; border-bottom:1px solid #e0e0e0; }
+        ._s { font-size:9px; color:${headerColor}; opacity:0.75; text-align:center; background:${bgColor}; letter-spacing:0.5px; padding:0; height:16px; line-height:16px; flex-shrink:0; width:100%; border-bottom:1px solid #e0e0e0; }
         ._mw { width:100%; flex:1 1 auto; position:relative; display:flex; flex-direction:column; overflow:hidden; border-radius:0; margin:0; background:transparent; }
         ._mw ._m1, ._mw ._g, ._mw ._v, ._mw ._model3d { display:none; flex-direction:column; width:100%; height:100%; background:${bgColor}; border-radius:0; overflow:hidden; flex:1 0 100%; }
         ._mw .active-widget { display:flex !important; }
