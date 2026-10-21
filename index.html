@@ -11,7 +11,6 @@ h1{font-size:22px;margin-bottom:8px}
 .sub{color:#666;font-size:14px;margin-bottom:20px}
 .section{background:#fff;border-radius:8px;padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.06);border-left:4px solid #ddd}
 .section.edit-mode{border-left-color:#e74c3c;background:#fff9f9}
-.section.auto-mode{border-left-color:#f39c12;background:#fffdf9}
 .section h2{font-size:15px;margin-bottom:12px;color:#333;border-bottom:1px solid #eee;padding-bottom:8px;display:flex;justify-content:space-between;align-items:center}
 label{display:block;font-size:12px;color:#555;margin:8px 0 4px;font-weight:600}
 input[type=text],input[type=color],textarea,select{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit;background:#fff;color:#222}
@@ -22,9 +21,8 @@ input[type=color]{padding:2px;height:36px;cursor:pointer}
 @media(max-width:700px){.row,.row3{grid-template-columns:1fr}}
 .btn-gen{display:block;width:100%;padding:14px;background:#24584b;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;margin-top:10px;letter-spacing:1px}
 .btn-gen:hover{background:#1a4137}
-.btn-search{background:#f39c12;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-weight:bold;cursor:pointer;height:36px;white-space:nowrap}
-.btn-search:hover{background:#d68910}
-.search-row{display:flex;gap:10px}
+.btn-parse{background:#e74c3c;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-weight:bold;cursor:pointer;width:100%;margin-top:10px;font-size:14px;}
+.btn-parse:hover{background:#c0392b}
 .actions{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
 .actions button{flex:1;padding:12px;border:none;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:.5px}
 .btn-copy{background:#3c8dbc;color:#fff}
@@ -43,24 +41,16 @@ input[type=color]{padding:2px;height:36px;cursor:pointer}
 <body>
 <div class="wrap">
 <h1>Генератор визиток PRO</h1>
-<div class="sub">Создавай, редактируй, защищай и автоматизируй!</div>
+<div class="sub">Создавай, редактируй, защищай!</div>
 
 <form id="form" onsubmit="event.preventDefault();generate();">
 
-<div class="section auto-mode">
-<h2>0. АВТО-ЗАПОЛНЕНИЕ С ЯНДЕКС.КАРТ</h2>
-<div class="search-row">
-    <input type="text" id="yandexUrl" placeholder="Вставь ссылку на объект с Яндекс.Карт (например: https://yandex.ru/maps/.../org/...)">
-    <button type="button" class="btn-search" onclick="parseYandexUrl()">ПОИСК</button>
-</div>
-<div class="hint">Генератор вытащит из ссылки ID организации, координаты и сам создаст ссылки на маршрут, отзывы, меню и код карты. Название и телефоны нужно будет вписать вручную.</div>
-</div>
-
 <div class="section edit-mode">
-<h2>0.1. Загрузить существующий код (Режим редактирования)</h2>
-<label>Вставь код готовой визитки (любой нашей старой), чтобы дополнить или удалить данные</label>
+<h2>0. Редактирование старых визиток</h2>
+<label>Вставь код старой визитки сюда:</label>
 <textarea id="existingCode" style="min-height:120px" placeholder="<!DOCTYPE html>..."></textarea>
-<div class="hint">Если поле заполнено, генератор просканирует код, вытащит все фото, кнопки, видео и модели. Галочки «УДАЛИТЬ» помогут стереть ненужное.</div>
+<button type="button" class="btn-parse" onclick="parseAndFill()">РАСПОЗНАТЬ И ЗАПОЛНИТЬ ФОРМУ</button>
+<div class="hint">Генератор просканирует код, вытащит все ссылки (карты, видео, фото, модели) и автоматически вставит их в поля ниже.</div>
 </div>
 
 <div class="section">
@@ -222,106 +212,187 @@ function chk(id){var e=document.getElementById(id);return e?e.checked:false;}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function jsStr(s){return JSON.stringify(String(s==null?'':s));}
 
-// ========== УМНЫЙ ПАРСЕР ССЫЛОК ЯНДЕКС.КАРТ ==========
-function parseYandexUrl() {
-    var url = val('yandexUrl');
-    if (!url) return alert('Вставь ссылку на Яндекс.Карты');
-    
-    var oidMatch = url.match(/oid%3D(\d+)/) || url.match(/org\/([^\/]+)\/(\d+)/);
-    var llMatch = url.match(/ll=([\d\.]+)%2C([\d\.]+)/);
-    var poiMatch = url.match(/poi%5Bpoint%5D=([\d\.]+)%2C([\d\.]+)/) || url.match(/rtext=~([\d\.]+)%2C([\d\.]+)/);
+// ========== НОВЫЙ МОЩНЫЙ ПАРСЕР СТАРЫХ ВИЗИТОК ==========
+function parseAndFill() {
+    var code = val('existingCode');
+    if (!code) return alert('Вставь код старой визитки в окно выше!');
 
-    if(!oidMatch || !llMatch || !poiMatch) {
-        return alert('Не удалось распознать ссылку. Убедись, что это ссылка на карточку организации Яндекс.Карт.');
+    var parser = new DOMParser();
+    var doc = parser.parseFromString(code, 'text/html');
+
+    // 1. Название
+    var titleMeta = doc.querySelector('meta[property="og:title"]');
+    var name = titleMeta ? titleMeta.content : (doc.title || '');
+    if (!name || name === 'Документ') {
+        var hEl = doc.querySelector('._h, .brand-header span, h1');
+        if (hEl) name = hEl.textContent.trim();
+    }
+    if(name) document.getElementById('name').value = name;
+
+    // 2. Подзаголовок
+    var descMeta = doc.querySelector('meta[property="og:description"]');
+    var subtitle = descMeta ? descMeta.content : '';
+    if (!subtitle) {
+        var sEl = doc.querySelector('._s');
+        if (sEl) subtitle = sEl.textContent.trim();
+    }
+    if(subtitle) document.getElementById('subtitle').value = subtitle;
+
+    // 3. Логотип (OG image)
+    var logoMeta = doc.querySelector('meta[property="og:image"]');
+    var logoUrl = logoMeta ? logoMeta.content : '';
+    if (!logoUrl) {
+        var imgEl = doc.querySelector('.brand-header img, #logoImg, ._h img');
+        if (imgEl) logoUrl = imgEl.src;
+    }
+    if(logoUrl) document.getElementById('ogImage').value = logoUrl;
+
+    // 4. Карта
+    var mapIframe = doc.querySelector('iframe[src*="yandex.ru/map-widget"]');
+    if (mapIframe) {
+        document.getElementById('mapIframe').value = mapIframe.src;
     }
 
-    var oid = oidMatch[oidMatch.length-1];
-    var lon = llMatch[1];
-    var lat = llMatch[2];
-    var poiLon = poiMatch[1];
-    var poiLat = poiMatch[2];
+    // Сброс чекбоксов удаления при парсинге
+    var delChecks = ['del_map','del_route','del_reviews','del_products','del_features','del_phone1','del_booking','del_site','del_tg','del_wa','del_max','del_insta','del_vk','del_ok','del_tour','del_photos','del_videos','del_models'];
+    delChecks.forEach(function(id){ if(document.getElementById(id)) document.getElementById(id).checked = false; });
 
-    // Генерируем ссылки
-    var mapSrc = `https://yandex.ru/map-widget/v1/?from=api-maps&ll=${lon}%2C${lat}&mode=poi&origin=jsapi21&poi%5Bpoint%5D=${poiLon}%2C${poiLat}&poi%5Buri%5D=ymapsbm1%3A%2F%2Forg%3Foid%3D${oid}&z=16.93`;
-    var routeLink = `https://yandex.ru/maps/?from=api-maps&ll=${lon}%2C${lat}&mode=routes&origin=jsapi21&rtext=~${poiLat}%2C${poiLon}&rtt=mt&ruri=~ymapsbm1%3A%2F%2Forg%3Foid%3D${oid}&z=16.93`;
-    var reviewsLink = `https://yandex.ru/maps/org/${oid}/reviews/`;
-    var featuresLink = `https://yandex.ru/maps/?from=api-maps&ll=${lon}%2C${lat}&mode=poi&origin=jsapi21&poi%5Bpoint%5D=${poiLon}%2C${poiLat}&poi%5Buri%5D=ymapsbm1%3A%2F%2Forg%3Foid%3D${oid}&tab=features&z=16.93`;
-    var productsLink = `https://yandex.ru/maps/?from=api-maps&ll=${lon}%2C${lat}&mode=poi&origin=jsapi21&poi%5Bpoint%5D=${poiLon}%2C${poiLat}&poi%5Buri%5D=ymapsbm1%3A%2F%2Forg%3Foid%3D${oid}&tab=menu&z=16.93`;
+    // 5. Кнопки и ссылки
+    var phone1 = '', phone1Link = '';
+    var routeLink = '', reviewsLink = '', featuresLink = '', productsLink = '';
+    var tourSingleUrl = '', bookingUrl = '';
+    var siteLink = '', tgLink = '', waLink = '', maxLink = '', instaLink = '', vkLink = '', okLink = '';
+    var hasOurBtn = false;
 
-    document.getElementById('mapIframe').value = mapSrc;
-    document.getElementById('routeLink').value = routeLink;
-    document.getElementById('reviewsLink').value = reviewsLink;
-    document.getElementById('featuresLink').value = featuresLink;
-    document.getElementById('productsLink').value = productsLink;
+    doc.querySelectorAll('a').forEach(function(a) {
+        var text = a.textContent.trim().toUpperCase();
+        var href = a.getAttribute('href') || '';
+
+        if (href.startsWith('tel:')) {
+            if (!phone1Link) { phone1Link = href; phone1 = a.textContent.trim(); }
+        }
+        else if (href.includes('VRREALLENDING') || text.includes('VRREAL360')) {
+            hasOurBtn = true;
+        }
+        else if (text.includes('3D') || text.includes('ТУР') || href.includes('yandex.ru/maps/-/')) {
+            if (!tourSingleUrl) tourSingleUrl = href;
+        }
+        else if (text.includes('МАРШРУТ') || href.includes('mode=routes')) {
+            if (!routeLink) routeLink = href;
+        }
+        else if (text.includes('ОТЗЫВ') || href.includes('tab=reviews')) {
+            if (!reviewsLink) reviewsLink = href;
+        }
+        else if (text.includes('ОСОБЕН') || href.includes('tab=features')) {
+            if (!featuresLink) featuresLink = href;
+        }
+        else if (text.includes('ТОВАР') || text.includes('УСЛУГ') || text.includes('МЕНЮ') || href.includes('tab=menu') || href.includes('tab=prices')) {
+            if (!productsLink) productsLink = href;
+        }
+        else if (text.includes('САЙТ') || text.includes('SITE')) {
+            if (!siteLink) siteLink = href;
+        }
+        else if (text.includes('TELEGRAM') || text.includes('ТЕЛЕГРАМ') || href.includes('t.me')) {
+            if (!tgLink) tgLink = href;
+        }
+        else if (text.includes('WHATSAPP') || text.includes('ВАТСАП') || href.includes('wa.me')) {
+            if (!waLink) waLink = href;
+        }
+        else if (text.includes('MAX') || text.includes('МАКС') || href.includes('max.ru')) {
+            if (!maxLink) maxLink = href;
+        }
+        else if (text.includes('INSTA') || text.includes('ИНСТАГРАМ') || href.includes('instagram.com')) {
+            if (!instaLink) instaLink = href;
+        }
+        else if (text.includes('VK') || text.includes('ВКОНТАКТЕ') || text.includes('В КОНТАКТЕ') || href.includes('vk.com') || href.includes('vk.ru')) {
+            if (!vkLink) vkLink = href;
+        }
+        else if (text.includes('OK') || text.includes('ОДНОКЛАССНИКИ') || href.includes('ok.ru')) {
+            if (!okLink) okLink = href;
+        }
+        else if (text.includes('БРОНИРОВАТЬ') || text.includes('ЗАБРОНИРОВАТЬ')) {
+            if (!bookingUrl) bookingUrl = href;
+        }
+    });
+
+    if(phone1) { document.getElementById('phone1').value = phone1; document.getElementById('phone1Link').value = phone1Link; }
+    if(tourSingleUrl) { document.getElementById('tourSingleUrl').value = tourSingleUrl; document.getElementById('tm_single').checked = true; }
+    if(routeLink) document.getElementById('routeLink').value = routeLink;
+    if(reviewsLink) document.getElementById('reviewsLink').value = reviewsLink;
+    if(featuresLink) document.getElementById('featuresLink').value = featuresLink;
+    if(productsLink) document.getElementById('productsLink').value = productsLink;
+    if(siteLink) document.getElementById('siteLink').value = siteLink;
+    if(tgLink) document.getElementById('tgLink').value = tgLink;
+    if(waLink) document.getElementById('waLink').value = waLink;
+    if(maxLink) document.getElementById('maxLink').value = maxLink;
+    if(instaLink) document.getElementById('instaLink').value = instaLink;
+    if(vkLink) document.getElementById('vkLink').value = vkLink;
+    if(okLink) document.getElementById('okLink').value = okLink;
+    if(bookingUrl) document.getElementById('bookingUrl').value = bookingUrl;
+
+    // 6. Фото
+    var photos = [];
+    var mPhotos = code.match(/var photos\s*=\s*(\[[\s\S]*?\]);/);
+    if (mPhotos) { try { photos = JSON.parse(mPhotos[1]); } catch(e){} }
     
-    alert('Ссылки на карту, маршрут, отзывы и меню успешно сгенерированы!');
+    if (photos.length === 0) {
+        doc.querySelectorAll('img').forEach(function(img) {
+            var src = img.src;
+            if (src && !src.includes('VRREAL360') && src !== logoUrl && !src.includes('islands') && (src.includes('get-altay') || src.includes('avatars.mds.yandex.net'))) {
+                if(!photos.includes(src)) photos.push(src);
+            }
+        });
+    }
+    if(photos.length > 0) document.getElementById('photos').value = photos.join('\n');
+
+    // 7. Видео
+    var videos = [];
+    var mVideos = code.match(/var videoEmbedUrls\s*=\s*(\[[\s\S]*?\]);/);
+    if (mVideos) { try { videos = JSON.parse(mVideos[1]); } catch(e){} }
+    
+    if (videos.length === 0) {
+        doc.querySelectorAll('iframe').forEach(function(ifr) {
+            var src = ifr.src;
+            if (src && (src.includes('rutube.ru') || src.includes('vk.com/video_ext'))) {
+                if(!videos.includes(src)) videos.push(src);
+            }
+        });
+    }
+    if(videos.length > 0) {
+        var rutube = videos.filter(function(v){ return v.includes('rutube'); });
+        var other = videos.filter(function(v){ return !v.includes('rutube'); });
+        if(rutube.length > 0) document.getElementById('videosRutube').value = rutube.join('\n');
+        if(other.length > 0) document.getElementById('videosOther').value = other.join('\n');
+    }
+
+    // 8. Модели
+    var models = [];
+    var mModels = code.match(/var model3dUrls\s*=\s*(\[[\s\S]*?\]);/);
+    if (mModels) { try { models = JSON.parse(mModels[1]); } catch(e){} }
+    
+    if (models.length === 0) {
+        doc.querySelectorAll('iframe').forEach(function(ifr) {
+            var src = ifr.src;
+            if (src && src.includes('sketchfab.com')) {
+                if(!models.includes(src)) models.push(src);
+            }
+        });
+    }
+    if(models.length > 0) document.getElementById('models3d').value = models.join('\n');
+
+    // 9. Наша кнопка
+    if(hasOurBtn) {
+        document.getElementById('ourBtnActive').checked = true;
+        document.getElementById('ourBtnDelete').checked = false;
+    }
+
+    alert('Сканирование завершено! Все найденные данные вставлены в форму. Проверь их и жми СГЕНЕРИРОВАТЬ.');
 }
 
 function generate(){
-    var existingCode = val('existingCode');
-    var isEditMode = existingCode.length > 0;
-
-    // 1. ПАРСИНГ СТАРОГО КОДА (Поддерживает любые прошлые версии)
-    var parsed = { photos: [], videos: [], models: [], buttons: [], mapSrc: '', name: '', subtitle: '' };
-    if (isEditMode) {
-        var tempDiv = document.createElement('div');
-        tempDiv.innerHTML = existingCode;
-
-        // Текст
-        var hEl = tempDiv.querySelector('._h');
-        if(hEl) parsed.name = hEl.innerText.trim();
-        var sEl = tempDiv.querySelector('._s');
-        if(sEl) parsed.subtitle = sEl.innerText.trim();
-
-        // Фото
-        var photoImgs = tempDiv.querySelectorAll('.slider-slide img');
-        photoImgs.forEach(function(img){ if(img.src) parsed.photos.push(img.src); });
-        if(parsed.photos.length === 0) {
-            var mPhotos = existingCode.match(/var photos = (\[[\s\S]*?\]);/);
-            if (mPhotos) try { parsed.photos = JSON.parse(mPhotos[1]); } catch(e){}
-        }
-
-        // Карта
-        var mapIframe = tempDiv.querySelector('._m1 iframe');
-        if(mapIframe) parsed.mapSrc = mapIframe.src;
-
-        // Видео
-        var mVideos = existingCode.match(/var videoEmbedUrls = (\[[\s\S]*?\]);/);
-        if (mVideos) try { parsed.videos = JSON.parse(mVideos[1]); } catch(e){}
-        if(parsed.videos.length === 0) {
-            var vidIframes = tempDiv.querySelectorAll('._video-item iframe');
-            vidIframes.forEach(function(ifr){ if(ifr.src) parsed.videos.push(ifr.src); });
-        }
-
-        // Модели
-        var mModels = existingCode.match(/var model3dUrls = (\[[\s\S]*?\]);/);
-        if (mModels) try { parsed.models = JSON.parse(mModels[1]); } catch(e){}
-        if(parsed.models.length === 0) {
-            var modelIframe = tempDiv.querySelector('#model3dIframe');
-            if(modelIframe && modelIframe.src) parsed.models.push(modelIframe.src);
-        }
-
-        // Кнопки (вытаскиваем из HTML)
-        var btnEls = tempDiv.querySelectorAll('._scrollButtons .btn');
-        btnEls.forEach(function(btn) {
-            var href = btn.getAttribute('href');
-            var text = btn.textContent.trim();
-            var onclick = btn.getAttribute('onclick');
-            if(href && href !== 'javascript:void(0)' && href.indexOf('javascript') === -1) {
-               parsed.buttons.push({label: text, href: href, target: '_blank'});
-            } else if(text) {
-               parsed.buttons.push({label: text, onclick: onclick || 'showMap()'}); // fallback
-            }
-        });
-        if(parsed.buttons.length === 0) {
-            var mButtons = existingCode.match(/var mainButtons = (\[[\s\S]*?\]);/);
-            if (mButtons) try { parsed.buttons = JSON.parse(mButtons[1]); } catch(e){}
-        }
-    }
-
-    // 2. ПРИМЕНЕНИЕ НОВЫХ ДАННЫХ ИЗ ФОРМЫ
-    var name = val('name') || parsed.name || 'НАЗВАНИЕ';
-    var subtitle = val('subtitle') || parsed.subtitle || '';
+    // Читаем все значения из формы
+    var name=val('name')||'НАЗВАНИЕ';
+    var subtitle=val('subtitle');
     var ogImage=val('ogImage');
     var ogUrl=val('ogUrl');
     var allowedDomain=val('allowedDomain')||'cz60182.tw1.ru';
@@ -329,7 +400,6 @@ function generate(){
     
     var mapSrc=val('mapIframe');
     if(chk('del_map')) mapSrc = '';
-    if(!mapSrc) mapSrc = parsed.mapSrc;
     
     var routeLink=val('routeLink');
     var reviewsLink=val('reviewsLink');
@@ -372,23 +442,15 @@ function generate(){
     var navBg=val('navBg')||'#07372b';
     var navText=val('navText')||'#99d6cf';
     
-    // --- ФОТО ---
     var newPhotos = val('photos').split('\n').map(function(l){return l.trim();}).filter(function(l){return l && l.indexOf('http')===0;});
-    var finalPhotos = parsed.photos;
-    if (newPhotos.length > 0) {
-        if (chk('del_photos')) {
-            finalPhotos = finalPhotos.filter(function(p){ return !newPhotos.includes(p); });
-        } else {
-            newPhotos.forEach(function(p){ if(!finalPhotos.includes(p)) finalPhotos.push(p); });
-        }
-    }
+    var finalPhotos = newPhotos;
     if(finalPhotos.length === 0) finalPhotos = ["https://avatars.mds.yandex.net/get-altay/21116552/2a000001a14e57b3a455a7acd1a9412a90c0/XXL"];
     
     var smartRandom=chk('smartRandom');
     var phoneNumbers=phone2?[phone1,phone2]:(phone1?[phone1]:[]);
     var phoneLinks=phone2?[phone1Link,phone2Link]:(phone1?[phone1Link]:[]);
 
-    // --- ВИДЕО ---
+    // Видео
     var rutubeLinks = val('videosRutube').split('\n').map(function(l){return l.trim();}).filter(function(l){return l;});
     var otherLinks = val('videosOther').split('\n').map(function(l){return l.trim();}).filter(function(l){return l;});
     var newVideos = rutubeLinks.map(function(l) {
@@ -397,16 +459,7 @@ function generate(){
         return l;
     }).concat(otherLinks);
     
-    var finalVideos = parsed.videos;
-    if (newVideos.length > 0) {
-        if (chk('del_videos')) {
-            finalVideos = finalVideos.filter(function(v){ return !newVideos.includes(v); });
-        } else {
-            newVideos.forEach(function(v){ if(!finalVideos.includes(v)) finalVideos.push(v); });
-        }
-    }
-    
-    // --- МОДЕЛИ ---
+    // Модели
     var modelsRaw = val('models3d').split('\n').map(function(l){return l.trim();}).filter(function(l){return l;});
     var newModels = [];
     modelsRaw.forEach(function(line) {
@@ -414,32 +467,10 @@ function generate(){
         if (match && match[1].indexOf('sketchfab') !== -1) newModels.push(match[1]);
         else if (line.indexOf('http') === 0) newModels.push(line);
     });
+
+    // Кнопки (3D ТУР ВСЕГДА ВВЕРХУ)
+    var finalButtons = [];
     
-    var finalModels = parsed.models;
-    if (newModels.length > 0) {
-        if (chk('del_models')) {
-            finalModels = finalModels.filter(function(m){ return !newModels.includes(m); });
-        } else {
-            newModels.forEach(function(m){ if(!finalModels.includes(m)) finalModels.push(m); });
-        }
-    }
-
-    // --- КНОПКИ ---
-    var finalButtons = parsed.buttons;
-    // Удаление
-    if(chk('del_route')) finalButtons = finalButtons.filter(function(b){ return b.label !== 'ПРОЛОЖИТЬ МАРШРУТ' && b.label !== 'МАРШРУТ'; });
-    if(chk('del_reviews')) finalButtons = finalButtons.filter(function(b){ return b.label !== 'ОТЗЫВЫ'; });
-    if(chk('del_products')) finalButtons = finalButtons.filter(function(b){ return b.label !== 'ТОВАРЫ И УСЛУГИ' && b.label !== 'МЕНЮ'; });
-    if(chk('del_features')) finalButtons = finalButtons.filter(function(b){ return b.label !== 'ОСОБЕННОСТИ'; });
-    if(chk('del_site')) finalButtons = finalButtons.filter(function(b){ return b.label !== 'САЙТ'; });
-    if(chk('del_tg')) finalButtons = finalButtons.filter(function(b){ return b.label !== 'ТЕЛЕГРАММ' && b.label !== 'TELEGRAM'; });
-    if(chk('del_wa')) finalButtons = finalButtons.filter(function(b){ return b.label !== 'ВАТСАП'; });
-    if(chk('del_max')) finalButtons = finalButtons.filter(function(b){ return b.label !== 'МАКС'; });
-    if(chk('del_insta')) finalButtons = finalButtons.filter(function(b){ return b.label !== 'ИНСТАГРАМ'; });
-    if(chk('del_vk')) finalButtons = finalButtons.filter(function(b){ return b.label !== 'В КОНТАКТЕ' && b.label !== 'VK'; });
-    if(chk('del_ok')) finalButtons = finalButtons.filter(function(b){ return b.label !== 'ОДНОКЛАССНИКИ'; });
-
-    // Добавление новых
     if(tourMode==='multi') finalButtons.push({label:'3D ТУР',onclick:'enter3DMode()'});
     else if(tourMode==='single'&&tourSingleUrl) finalButtons.push({label:'3D ТУР',href:tourSingleUrl,target:'_blank'});
     
@@ -448,6 +479,7 @@ function generate(){
     if(reviewsLink) finalButtons.push({label:'ОТЗЫВЫ',href:reviewsLink,target:'_blank'});
     if(productsLink) finalButtons.push({label:'ТОВАРЫ И УСЛУГИ',href:productsLink,target:'_blank'});
     if(featuresLink) finalButtons.push({label:'ОСОБЕННОСТИ',href:featuresLink,target:'_blank'});
+    
     if(siteLink) finalButtons.push({label:'САЙТ',href:siteLink,target:'_blank'});
     if(tgLink) finalButtons.push({label:'ТЕЛЕГРАММ',href:tgLink,target:'_blank'});
     if(waLink) finalButtons.push({label:'ВАТСАП',href:waLink,target:'_blank'});
@@ -462,30 +494,9 @@ function generate(){
         if(fName && fUrl) finalButtons.push({label:fName, href:fUrl, target:'_blank'});
     }
     
-    if (finalVideos.length > 0) finalButtons.push({label:'ВИДЕО',onclick:'showVideo()'});
-    if (finalModels.length > 0) finalButtons.push({label:'3D МОДЕЛЬ',onclick:'showModel3d()'});
+    if (newVideos.length > 0) finalButtons.push({label:'ВИДЕО',onclick:'showVideo()'});
+    if (newModels.length > 0) finalButtons.push({label:'3D МОДЕЛЬ',onclick:'showModel3d()'});
 
-    // Удаление дубликатов
-    var uniqueButtons = [];
-    var seenLabels = {};
-    finalButtons.forEach(function(b) {
-        if(!seenLabels[b.label]) { seenLabels[b.label] = true; uniqueButtons.push(b); }
-    });
-    finalButtons = uniqueButtons;
-
-    // --- НАША КНОПКА ---
-    var ourBtnActive = chk('ourBtnActive') && !chk('ourBtnDelete');
-    var ourBtnColor = val('ourBtnColor');
-    var ourBtnBg = '#ffffff', ourBtnText = '#000000', ourBtnBorder = '#cccccc';
-    if(ourBtnColor === 'black') { ourBtnBg = '#000000'; ourBtnText = '#ffffff'; ourBtnBorder = '#333333'; }
-    if(ourBtnColor === 'gray') { ourBtnBg = '#6c757d'; ourBtnText = '#ffffff'; ourBtnBorder = '#5a6268'; }
-    
-    var ourBtnHtml = '';
-    if(ourBtnActive) {
-        ourBtnHtml = `<a href="https://cz60182.tw1.ru/VRREALLENDING_/index.html" target="_blank" class="btn-static" style="text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; background:${ourBtnBg}; color:${ourBtnText}; border:1px solid ${ourBtnBorder}; font-weight:bold; height:44px; margin-top:2px;"><img src="https://avatars.mds.yandex.net/get-yapic/18057972/Of84ti5hPQND8Fu5hTng8zKfY-1/islands-200" style="height:22px; width:22px; border-radius:50%; object-fit:cover;"> VRREAL360</a>`;
-    }
-
-    // --- ФОРМИРОВАНИЕ JS ---
     var dynJs='[\n'+finalButtons.map(function(b){
         var parts=['label:'+jsStr(b.label)];
         if(b.href) parts.push('href:'+jsStr(b.href));
@@ -527,8 +538,8 @@ function generate(){
         function enter3DMode() {}
         function exit3DMode() {}`;
 
-    var videoJs = finalVideos.length > 0 ? `
-        var videoEmbedUrls = ${JSON.stringify(finalVideos)};
+    var videoJs = newVideos.length > 0 ? `
+        var videoEmbedUrls = ${JSON.stringify(newVideos)};
         var videoScroll = document.getElementById('videoScroll'); var videoItems = []; var videoWidget = document.getElementById('videoWidget');
         function buildVideoSlider() { if (!videoScroll) return; videoScroll.innerHTML = ''; videoEmbedUrls.forEach(function(src, idx) { var item = document.createElement('div'); item.className = '_video-item'; item.dataset.index = idx; var iframe = document.createElement('iframe'); iframe.src = ''; iframe.allow = 'autoplay; fullscreen'; iframe.allowFullscreen = true; item.appendChild(iframe); videoScroll.appendChild(item); }); videoItems = videoScroll.querySelectorAll('._video-item'); if (window.IntersectionObserver) { var observer = new IntersectionObserver(function(entries) { entries.forEach(function(entry) { var item = entry.target; var iframe = item.querySelector('iframe'); if (entry.isIntersecting) { var idx = parseInt(item.dataset.index); if (!isNaN(idx) && iframe.src !== videoEmbedUrls[idx]) { iframe.src = videoEmbedUrls[idx]; } } else { if (iframe.src) iframe.src = ''; } }); }, { threshold: 0.5 }); videoItems.forEach(function(item) { observer.observe(item); }); } }
         function clearAllVideos() { if (typeof videoItems === 'undefined' || !videoItems) return; videoItems.forEach(function(item) { var iframe = item.querySelector('iframe'); if (iframe) iframe.src = ''; }); }
@@ -538,8 +549,8 @@ function generate(){
         window.showVideo = showVideo; window.clearAllVideos = clearAllVideos;
     ` : `function showVideo() {} window.showVideo = showVideo; function clearAllVideos() {} window.clearAllVideos = clearAllVideos;`;
 
-    var model3dJs = finalModels.length > 0 ? `
-        var model3dUrls = ${JSON.stringify(finalModels)};
+    var model3dJs = newModels.length > 0 ? `
+        var model3dUrls = ${JSON.stringify(newModels)};
         var currentModelIndex = 0; var model3dWidget = document.getElementById('model3dWidget'); var model3dIframe = document.getElementById('model3dIframe'); var btnPrev = document.getElementById('modelPrev'); var btnNext = document.getElementById('modelNext');
         if (model3dUrls.length <= 1) { if (btnPrev) btnPrev.style.display = 'none'; if (btnNext) btnNext.style.display = 'none'; }
         function updateModel3d() { if (!model3dIframe) return; model3dIframe.src = model3dUrls[currentModelIndex]; }
@@ -551,6 +562,18 @@ function generate(){
         function closeModel3d() { if (model3dIframe) model3dIframe.src = ''; showGallery(); }
         window.closeModel3d = closeModel3d;
     ` : `function showModel3d() {} window.showModel3d = showModel3d; function closeModel3d() {} window.closeModel3d = closeModel3d;`;
+
+    // НАША КНОПКА
+    var ourBtnActive = chk('ourBtnActive') && !chk('ourBtnDelete');
+    var ourBtnColor = val('ourBtnColor');
+    var ourBtnBg = '#ffffff', ourBtnText = '#000000', ourBtnBorder = '#cccccc';
+    if(ourBtnColor === 'black') { ourBtnBg = '#000000'; ourBtnText = '#ffffff'; ourBtnBorder = '#333333'; }
+    if(ourBtnColor === 'gray') { ourBtnBg = '#6c757d'; ourBtnText = '#ffffff'; ourBtnBorder = '#5a6268'; }
+    
+    var ourBtnHtml = '';
+    if(ourBtnActive) {
+        ourBtnHtml = `<a href="https://cz60182.tw1.ru/VRREALLENDING_/index.html" target="_blank" class="btn-static" style="text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; background:${ourBtnBg}; color:${ourBtnText}; border:1px solid ${ourBtnBorder}; font-weight:bold; height:44px; margin-top:2px;"><img src="https://avatars.mds.yandex.net/get-yapic/18057972/Of84ti5hPQND8Fu5hTng8zKfY-1/islands-200" style="height:22px; width:22px; border-radius:50%; object-fit:cover;"> VRREAL360</a>`;
+    }
 
     var headPart = `<!DOCTYPE html>
 <html lang="ru">
@@ -695,7 +718,7 @@ function generate(){
                 </div>
             </div>
 
-            ${finalVideos.length > 0 ? `<div class="_v" id="videoWidget">
+            ${newVideos.length > 0 ? `<div class="_v" id="videoWidget">
                 <div class="_video-scroll" id="videoScroll"></div>
                 <button class="video-btn video-prev" id="videoPrev">‹</button>
                 <button class="video-btn video-next" id="videoNext">›</button>
@@ -704,7 +727,7 @@ function generate(){
                 </div>
             </div>` : ''}
 
-            ${finalModels.length > 0 ? `<div class="_model3d" id="model3dWidget">
+            ${newModels.length > 0 ? `<div class="_model3d" id="model3dWidget">
                 <div class="_model3d-iframe-wrap">
                     <iframe id="model3dIframe" frameborder="0" allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true" allow="autoplay; fullscreen; xr-spatial-tracking" xr-spatial-tracking execution-while-out-of-viewport execution-while-not-rendered web-share></iframe>
                 </div>
