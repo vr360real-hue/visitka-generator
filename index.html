@@ -13,6 +13,7 @@
 <meta property="og:type" content="website" />
 
 <style>
+* { -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f4f6f8;color:#222;padding:20px;margin:0}
 .wrap{max-width:1000px;margin:0 auto}
 h1{font-size:22px;margin-bottom:8px}
@@ -21,11 +22,11 @@ h1{font-size:22px;margin-bottom:8px}
 .section.edit-mode{border-left-color:#e74c3c;background:#fff9f9}
 .section h2{font-size:15px;margin-bottom:12px;color:#333;border-bottom:1px solid #eee;padding-bottom:8px;display:flex;justify-content:space-between;align-items:center}
 label{display:block;font-size:12px;color:#555;margin:8px 0 4px;font-weight:600}
-input[type=text],input[type=color],textarea,select{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit;background:#fff;color:#222}
+input[type=text],input[type=color],input[type=number],textarea,select{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit;background:#fff;color:#222}
 textarea{resize:vertical;min-height:60px}
 input[type=color]{padding:2px;height:36px;cursor:pointer}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.row3{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:8px}
 @media(max-width:700px){.row,.row3{grid-template-columns:1fr}}
 .btn-gen{display:block;width:100%;padding:14px;background:#24584b;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;margin-top:10px;letter-spacing:1px}
 .btn-gen:hover{background:#1a4137}
@@ -84,7 +85,6 @@ input[type=color]{padding:2px;height:36px;cursor:pointer}
 <h2>2. Карта и Яндекс.Карты</h2>
 <div style="margin-bottom:8px;"><label>Карта (iframe или src) <label class="del-check"><input type="checkbox" id="del_map"> УДАЛИТЬ</label></label>
 <textarea id="mapIframe" placeholder="Вставь код iframe или ссылку map-widget/v1/..."></textarea>
-<div class="hint">Кнопка «НА КАРТУ» откроет встроенную карту внутри визитки.</div>
 </div>
 <div class="row">
 <div><label>Маршрут <label class="del-check"><input type="checkbox" id="del_route"> УДАЛИТЬ</label></label><input type="text" id="routeLink"></div>
@@ -93,6 +93,17 @@ input[type=color]{padding:2px;height:36px;cursor:pointer}
 <div class="row">
 <div><label>Товары и услуги <label class="del-check"><input type="checkbox" id="del_products"> УДАЛИТЬ</label></label><input type="text" id="productsLink"></div>
 <div><label>Особенности <label class="del-check"><input type="checkbox" id="del_features"> УДАЛИТЬ</label></label><input type="text" id="featuresLink"></div>
+</div>
+<div class="row">
+<div><label>Меню <label class="del-check"><input type="checkbox" id="del_menu"> УДАЛИТЬ</label></label><input type="text" id="menuLink"></div>
+<div><label>Новости <label class="del-check"><input type="checkbox" id="del_news"> УДАЛИТЬ</label></label><input type="text" id="newsLink"></div>
+</div>
+
+<div style="margin-top:10px; padding-top:10px; border-top:1px dashed #ccc;">
+<label>Дополнительные сервисы Яндекс (для будущего)</label>
+<div class="free-row"><input type="text" id="yandexName1" placeholder="Название кнопки 1"><input type="text" id="yandexUrl1" placeholder="Ссылка 1"></div>
+<div class="free-row"><input type="text" id="yandexName2" placeholder="Название кнопки 2"><input type="text" id="yandexUrl2" placeholder="Ссылка 2"></div>
+<div class="free-row"><input type="text" id="yandexName3" placeholder="Название кнопки 3"><input type="text" id="yandexUrl3" placeholder="Ссылка 3"></div>
 </div>
 </div>
 
@@ -161,24 +172,89 @@ input[type=color]{padding:2px;height:36px;cursor:pointer}
 </div>
 
 <div class="section">
-<h2>7. Фото <label class="del-check"><input type="checkbox" id="del_photos"> УДАЛИТЬ УКАЗАННЫЕ</label></h2>
+<h2>7. Главное фото (Слайдер) <label class="del-check"><input type="checkbox" id="del_photos"> УДАЛИТЬ УКАЗАННЫЕ</label></h2>
 <label>Одна ссылка на строку</label>
-<textarea id="photos" style="min-height:160px" placeholder="https://..."></textarea>
-<div class="hint">Если поставить галочку "УДАЛИТЬ" и оставить пустым — удалятся ВСЕ фото. Если вставить ссылки — удалятся только они.</div>
+<textarea id="photos" style="min-height:120px" placeholder="https://..."></textarea>
 <div class="check" style="margin-top:10px"><input type="checkbox" id="smartRandom" checked><label for="smartRandom" style="margin:0;cursor:pointer">Умный рандом (без повторов до конца цикла)</label></div>
+
+<div class="row" style="margin-top:10px; background:#f0f8ff; padding:10px; border-radius:5px; border:1px solid #cce5ff;">
+    <div>
+        <div class="check"><input type="checkbox" id="spin360" onchange="document.getElementById('spinSpeedWrap').style.display = this.checked ? 'block' : 'none'"><label for="spin360" style="margin:0;cursor:pointer;font-weight:bold;color:#0056b3;">Режим 360 (облёт)</label></div>
+        <div class="hint">Сменные кадры для облёта объекта.</div>
+    </div>
+    <div id="spinSpeedWrap" style="display:none;">
+        <div class="row">
+            <div><label>Скорость облёта (сек)</label><input type="number" id="spinSpeed" value="0.1" step="0.01" min="0.01" max="10"></div>
+            <div><label>Пауза на 1-м кадре (сек)</label><input type="number" id="spinDelay" value="1.5" step="0.1" min="0"></div>
+        </div>
+    </div>
+</div>
+
+<div class="row" style="margin-top:10px; background:#f0f8ff; padding:10px; border-radius:5px; border:1px solid #cce5ff;">
+    <div>
+        <div class="check"><input type="checkbox" id="overlayPhotoEnabled" onchange="document.getElementById('overlayPhotoUrlWrap').style.display = this.checked ? 'block' : 'none'"><label for="overlayPhotoEnabled" style="margin:0;cursor:pointer;font-weight:bold;color:#0056b3;">Наложение картинки на слайдер (PNG)</label></div>
+        <div class="hint">Например, "Добро пожаловать" с прозрачным фоном.</div>
+    </div>
+    <div id="overlayPhotoUrlWrap" style="display:none;">
+        <label>URL картинки (с прозрачностью)</label>
+        <input type="text" id="overlayPhotoUrl" placeholder="https://...">
+    </div>
+</div>
+</div>
+
+<div class="section">
+<h2>7.1. Фотогалерея (Отдельное шоу)</h2>
+<label>Одна ссылка на строку. Формат: <b>URL|Подпись</b> (или просто URL)</label>
+<textarea id="galleryPhotos" style="min-height:120px" placeholder="https://...|Утренний кофе&#10;https://...|Круассаны"></textarea>
+<div class="check"><input type="checkbox" id="showGalleryCaptions"><label for="showGalleryCaptions" style="margin:0;cursor:pointer">Показывать подписи к фото</label></div>
+<div class="hint">Создаст отдельную кнопку "ФОТО" с шоу и стрелочками.</div>
+</div>
+
+<div class="section">
+<h2>7.2. Товар 360 (Предметная демонстрация)</h2>
+<label>Список товаров. Формат:
+<pre style="font-size:11px;background:#f5f5f5;padding:8px;border-radius:4px;margin:4px 0;white-space:pre-wrap">НАЗВАНИЕ: Ручка из золота
+ССЫЛКА: https://shop.example.com/gold-pen
+КНОПКА: КУПИТЬ
+КАДР: https://...кадр1
+КАДР: https://...кадр2
+КАДР: https://...кадр3
+---
+НАЗВАНИЕ: Портфель кожаный
+ССЫЛКА: https://shop.example.com/leather-bag
+КНОПКА: КУПИТЬ
+КАДР: https://...кадр1
+КАДР: https://...кадр2</pre>
+</label>
+<textarea id="p360ProductsRaw" style="min-height:160px" placeholder="НАЗВАНИЕ: Товар 1&#10;ССЫЛКА: https://...&#10;КНОПКА: КУПИТЬ&#10;КАДР: https://...кадр1&#10;КАДР: https://...кадр2&#10;---&#10;НАЗВАНИЕ: Товар 2&#10;..."></textarea>
+<div class="row">
+    <div><label>Скорость облёта (сек)</label><input type="number" id="p360Speed" value="0.1" step="0.01" min="0.01" max="10"></div>
+    <div><label>Пауза на 1-м кадре (сек)</label><input type="number" id="p360Delay" value="1.5" step="0.1" min="0"></div>
+</div>
+<div class="check" style="margin-top:10px;"><input type="checkbox" id="p360ShowCaptions"><label for="p360ShowCaptions" style="margin:0;cursor:pointer">Показывать подписи (названия) товаров</label></div>
+<div class="check"><input type="checkbox" id="p360ShowBuyBtn"><label for="p360ShowBuyBtn" style="margin:0;cursor:pointer">Показывать кнопку "Купить"</label></div>
+<div class="hint">Каждый товар — отдельный 360-облёт. Между товарами — переключение стрелками по бокам.</div>
 </div>
 
 <div class="section">
 <h2>8. Видео <label class="del-check"><input type="checkbox" id="del_videos"> УДАЛИТЬ УКАЗАННЫЕ</label></h2>
 <div><label>Ссылки на Rutube</label><textarea id="videosRutube" style="min-height:80px" placeholder="https://rutube.ru/video/..."></textarea></div>
 <div style="margin-top:10px"><label>Другие видео (iframe)</label><textarea id="videosOther" style="min-height:80px" placeholder="https://vk.com/video_ext.php?..."></textarea></div>
-<div class="hint">Пусто + галочка = удалить ВСЕ видео. Со ссылками + галочка = удалить только их.</div>
 </div>
 
 <div class="section">
 <h2>9. 3D Модели <label class="del-check"><input type="checkbox" id="del_models"> УДАЛИТЬ УКАЗАННЫЕ</label></h2>
-<div><label>Код с Sketchfab (или ссылка)</label><textarea id="models3d" style="min-height:100px" placeholder="<iframe src='https://sketchfab.com/models/...'></iframe>"></textarea></div>
-<div class="hint">Пусто + галочка = удалить ВСЕ модели. Со ссылками + галочка = удалить только их.</div>
+<div><label>Код с Sketchfab (можно несколько)</label><textarea id="models3d" style="min-height:100px" placeholder="<iframe src='https://sketchfab.com/models/...'></iframe>"></textarea></div>
+<div class="check"><input type="checkbox" id="showModelCaptions"><label for="showModelCaptions" style="margin:0;cursor:pointer">Показывать подписи к моделям</label></div>
+<div><label>Подписи к моделям (по одной на строку)</label><textarea id="modelCaptions" style="min-height:60px" placeholder="Стоматологическая установка&#10;Компрессор"></textarea></div>
+
+<div style="margin-top:10px; background:#f0f8ff; padding:10px; border-radius:5px; border:1px solid #cce5ff;">
+    <div class="check"><input type="checkbox" id="modelBgEnabled" onchange="document.getElementById('modelBgUrlWrap').style.display = this.checked ? 'block' : 'none'"><label for="modelBgEnabled" style="margin:0;cursor:pointer;font-weight:bold;color:#0056b3;">Добавить фон/логотип под модель</label></div>
+    <div id="modelBgUrlWrap" style="display:none; margin-top:5px;">
+        <label>URL картинки (PNG с прозрачностью)</label>
+        <input type="text" id="modelBgUrl" placeholder="https://...">
+    </div>
+</div>
 </div>
 
 <div class="section">
@@ -232,14 +308,42 @@ function chk(id){var e=document.getElementById(id);return e?e.checked:false;}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function jsStr(s){return JSON.stringify(String(s==null?'':s));}
 
+// ========== ПАРСЕР ТОВАРОВ 360 ==========
+function parseP360Products(raw) {
+    if (!raw) return [];
+    var products = [];
+    var blocks = raw.split(/\n\s*---\s*\n/);
+    blocks.forEach(function(block) {
+        var lines = block.split('\n').map(function(l){return l.trim();}).filter(function(l){return l;});
+        if (lines.length === 0) return;
+        var product = { name: '', link: '', btnLabel: 'КУПИТЬ', frames: [] };
+        lines.forEach(function(line) {
+            var match = line.match(/^(НАЗВАНИЕ|ССЫЛКА|КНОПКА|КАДР):\s*(.+)$/i);
+            if (match) {
+                var key = match[1].toUpperCase();
+                var value = match[2].trim();
+                if (key === 'НАЗВАНИЕ') product.name = value;
+                else if (key === 'ССЫЛКА') product.link = value;
+                else if (key === 'КНОПКА') product.btnLabel = value;
+                else if (key === 'КАДР') product.frames.push(value);
+            } else if (line.indexOf('http') === 0) {
+                product.frames.push(line);
+            }
+        });
+        if (product.frames.length > 0) products.push(product);
+    });
+    return products;
+}
+
 // ========== УНИВЕРСАЛЬНЫЙ ПАРСЕР КОДА ==========
 function extractDataFromCode(code) {
     var data = {
         name: '', subtitle: '', ogImage: '', mapSrc: '', routeLink: '', reviewsLink: '',
-        productsLink: '', featuresLink: '', siteLink: '', tgLink: '', waLink: '',
-        maxLink: '', instaLink: '', vkLink: '', okLink: '', phone1: '', phone1Link: '',
-        bookingUrl: '', tourUrl: '', photos: [], videos: [], models: [], hasOurBtn: false, freeButtons: [],
-        headerColor: ''
+        productsLink: '', featuresLink: '', menuLink: '', newsLink: '',
+        siteLink: '', tgLink: '', waLink: '', maxLink: '', instaLink: '', vkLink: '', okLink: '',
+        phone1: '', phone1Link: '', bookingUrl: '', tourUrl: '',
+        photos: [], galleryPhotos: [], videos: [], models: [], modelCaptions: [], modelBgUrl: '',
+        hasOurBtn: false, freeButtons: [], yandexButtons: [], headerColor: ''
     };
     if (!code) return data;
 
@@ -257,11 +361,9 @@ function extractDataFromCode(code) {
     var logoMeta = doc.querySelector('meta[property="og:image"]');
     data.ogImage = logoMeta ? logoMeta.content : '';
 
-    // Попытка вытащить цвет шапки из старых стилей
     var hStyle = code.match(/\._h\s*\{[^}]*color:\s*(#[0-9a-fA-F]{3,6})/i);
     if (hStyle) data.headerColor = hStyle[1];
 
-    // Map iframe
     var mapIframe = doc.querySelector('._m1 iframe') || doc.querySelector('iframe[src*="map-widget"]');
     if (mapIframe) {
         var src = mapIframe.getAttribute('src') || mapIframe.src;
@@ -290,7 +392,11 @@ function extractDataFromCode(code) {
         else if (url.includes('yandex') && url.includes('maps')) {
             if (url.includes('tab=reviews') || url.includes('/reviews/')) { if (!data.reviewsLink) data.reviewsLink = url; }
             else if (url.includes('tab=features')) { if (!data.featuresLink) data.featuresLink = url; }
-            else if (url.includes('tab=menu') || url.includes('tab=prices')) { if (!data.productsLink) data.productsLink = url; }
+            else if (url.includes('tab=menu') || url.includes('tab=prices')) { 
+                if (url.includes('tab=menu')) { if (!data.menuLink) data.menuLink = url; }
+                if (url.includes('tab=prices')) { if (!data.productsLink) data.productsLink = url; }
+            }
+            else if (url.includes('tab=posts')) { if (!data.newsLink) data.newsLink = url; }
             else if (url.includes('mode=routes') || url.includes('rtext=')) { if (!data.routeLink) data.routeLink = url; }
             else if (url.includes('/-/')) { if (!data.tourUrl) data.tourUrl = url; }
         }
@@ -309,7 +415,6 @@ function extractDataFromCode(code) {
         }
     });
 
-    // 3D тур из mainButtons
     var tourFromButtons = code.match(/\["3D ТУР",\s*"([^"]+)"/);
     if (tourFromButtons && tourFromButtons[1]) data.tourUrl = tourFromButtons[1];
 
@@ -349,7 +454,7 @@ function extractDataFromCode(code) {
         sketchfabMatches.forEach(function(m) {
             var idMatch = m.match(/models\/([a-zA-Z0-9]+)/i);
             if(idMatch) {
-                var embed = 'https://sketchfab.com/models/' + idMatch[1] + '/embed';
+                var embed = 'https://sketchfab.com/models/' + idMatch[1] + '/embed?autostart=1&preload=1&transparent=1';
                 if(!data.models.includes(embed)) data.models.push(embed);
             }
         });
@@ -374,6 +479,8 @@ function parseAndFill() {
     if(data.reviewsLink) document.getElementById('reviewsLink').value = data.reviewsLink;
     if(data.featuresLink) document.getElementById('featuresLink').value = data.featuresLink;
     if(data.productsLink) document.getElementById('productsLink').value = data.productsLink;
+    if(data.menuLink) document.getElementById('menuLink').value = data.menuLink;
+    if(data.newsLink) document.getElementById('newsLink').value = data.newsLink;
     
     if(data.phone1) {
         document.getElementById('phone1').value = data.phone1;
@@ -415,7 +522,7 @@ function parseAndFill() {
         document.getElementById('ourBtnDelete').checked = false;
     }
 
-    var delChecks = ['del_map','del_route','del_reviews','del_products','del_features','del_phone1','del_booking','del_site','del_tg','del_wa','del_max','del_insta','del_vk','del_ok','del_tour','del_photos','del_videos','del_models'];
+    var delChecks = ['del_map','del_route','del_reviews','del_products','del_features','del_menu','del_news','del_phone1','del_booking','del_site','del_tg','del_wa','del_max','del_insta','del_vk','del_ok','del_tour','del_photos','del_videos','del_models'];
     delChecks.forEach(function(id){ if(document.getElementById(id)) document.getElementById(id).checked = false; });
 
     alert('Сканирование завершено! Проверь поля и жми СГЕНЕРИРОВАТЬ.');
@@ -425,7 +532,6 @@ function generate(){
     var existingCode = val('existingCode');
     var parsed = extractDataFromCode(existingCode);
 
-    // ЖЕСТКАЯ ЗАЩИТА ОТ ПУСТЫХ ЗНАЧЕНИЙ
     var rawName = val('name') || parsed.name || '';
     var rawSubtitle = val('subtitle') || parsed.subtitle || '';
 
@@ -437,7 +543,6 @@ function generate(){
     var allowedDomain = val('allowedDomain') || 'cz60182.tw1.ru';
     var radioUrl = val('radioUrl') || 'https://montecarlo.hostingradio.ru/montecarlo96.aacp';
 
-    // ===== КАРТА (встроенная) =====
     var mapSrc = val('mapIframe');
     if (mapSrc && mapSrc.indexOf('<') !== -1) {
         var m = mapSrc.match(/src=["']([^"']+)["']/i);
@@ -447,68 +552,67 @@ function generate(){
     mapSrc = (mapSrc || '').replace(/&amp;/g, '&').trim();
     if (chk('del_map')) mapSrc = '';
 
-    var routeLink = val('routeLink') || parsed.routeLink || '';
-    if(chk('del_route')) routeLink = '';
-
-    var reviewsLink = val('reviewsLink') || parsed.reviewsLink || '';
-    if(chk('del_reviews')) reviewsLink = '';
-
-    var productsLink = val('productsLink') || parsed.productsLink || '';
-    if(chk('del_products')) productsLink = '';
-
-    var featuresLink = val('featuresLink') || parsed.featuresLink || '';
-    if(chk('del_features')) featuresLink = '';
-
-    var siteLink = val('siteLink') || parsed.siteLink || '';
-    if(chk('del_site')) siteLink = '';
-
-    var tgLink = val('tgLink') || parsed.tgLink || '';
-    if(chk('del_tg')) tgLink = '';
-
-    var waLink = val('waLink') || parsed.waLink || '';
-    if(chk('del_wa')) waLink = '';
-
-    var maxLink = val('maxLink') || parsed.maxLink || '';
-    if(chk('del_max')) maxLink = '';
-
-    var instaLink = val('instaLink') || parsed.instaLink || '';
-    if(chk('del_insta')) instaLink = '';
-
-    var vkLink = val('vkLink') || parsed.vkLink || '';
-    if(chk('del_vk')) vkLink = '';
-
-    var okLink = val('okLink') || parsed.okLink || '';
-    if(chk('del_ok')) okLink = '';
+    var routeLink = val('routeLink') || parsed.routeLink || ''; if(chk('del_route')) routeLink = '';
+    var reviewsLink = val('reviewsLink') || parsed.reviewsLink || ''; if(chk('del_reviews')) reviewsLink = '';
+    var productsLink = val('productsLink') || parsed.productsLink || ''; if(chk('del_products')) productsLink = '';
+    var featuresLink = val('featuresLink') || parsed.featuresLink || ''; if(chk('del_features')) featuresLink = '';
+    var menuLink = val('menuLink') || parsed.menuLink || ''; if(chk('del_menu')) menuLink = '';
+    var newsLink = val('newsLink') || parsed.newsLink || ''; if(chk('del_news')) newsLink = '';
+    
+    var siteLink = val('siteLink') || parsed.siteLink || ''; if(chk('del_site')) siteLink = '';
+    var tgLink = val('tgLink') || parsed.tgLink || ''; if(chk('del_tg')) tgLink = '';
+    var waLink = val('waLink') || parsed.waLink || ''; if(chk('del_wa')) waLink = '';
+    var maxLink = val('maxLink') || parsed.maxLink || ''; if(chk('del_max')) maxLink = '';
+    var instaLink = val('instaLink') || parsed.instaLink || ''; if(chk('del_insta')) instaLink = '';
+    var vkLink = val('vkLink') || parsed.vkLink || ''; if(chk('del_vk')) vkLink = '';
+    var okLink = val('okLink') || parsed.okLink || ''; if(chk('del_ok')) okLink = '';
 
     var phone1 = val('phone1') || parsed.phone1 || '';
     var phone1Link = val('phone1Link') || parsed.phone1Link || ('tel:'+phone1.replace(/[^\d+]/g,''));
     if(chk('del_phone1')) { phone1 = ''; phone1Link = ''; }
+    var bookingUrl = val('bookingUrl') || parsed.bookingUrl || ''; if(chk('del_booking')) bookingUrl = '';
 
-    var bookingUrl = val('bookingUrl') || parsed.bookingUrl || '';
-    if(chk('del_booking')) bookingUrl = '';
+    var tourMode = document.querySelector('input[name="tourMode"]:checked').value; if(chk('del_tour')) tourMode = 'none';
+    var tourSingleUrl = val('tourSingleUrl') || parsed.tourUrl || ''; if(tourMode === 'none') tourSingleUrl = '';
 
-    var tourMode = document.querySelector('input[name="tourMode"]:checked').value;
-    if(chk('del_tour')) tourMode = 'none';
-    var tourSingleUrl = val('tourSingleUrl') || parsed.tourUrl || '';
-    if(tourMode === 'none') tourSingleUrl = '';
-
-    // ФОТО
+    // ===== ФОТО (Слайдер и 360) =====
     var parsedPhotos = parsed.photos || [];
     var inputPhotos = val('photos').split('\n').map(function(l){return l.trim();}).filter(function(l){return l && l.indexOf('http')===0;});
     var finalPhotos = [];
     if (chk('del_photos')) {
-        if (inputPhotos.length > 0) {
-            finalPhotos = parsedPhotos.filter(function(p){ return !inputPhotos.includes(p); });
-        } else {
-            finalPhotos = [];
-        }
+        if (inputPhotos.length > 0) finalPhotos = parsedPhotos.filter(function(p){ return !inputPhotos.includes(p); });
+        else finalPhotos = [];
     } else {
         finalPhotos = parsedPhotos.slice();
         inputPhotos.forEach(function(p){ if(!finalPhotos.includes(p)) finalPhotos.push(p); });
     }
-    if (finalPhotos.length === 0) finalPhotos = ["https://avatars.mds.yandex.net/get-altay/21116552/2a000001a14e57b3a455a7acd1a9412a90c0/XXL"];
+    if (finalPhotos.length === 0) finalPhotos = ["https://avatars.mds.yandex.net/get-altay/22248647/2a000001a15ead1c08c22526aa64b57f7451/XXL"];
 
-    // ВИДЕО
+    var isSpin360 = chk('spin360');
+    var spinSpeed = parseFloat(val('spinSpeed')) || 0.1;
+    if(spinSpeed < 0.01) spinSpeed = 0.01; if(spinSpeed > 10) spinSpeed = 10;
+    var spinDelay = parseFloat(val('spinDelay')) || 1.5;
+    if(spinDelay < 0) spinDelay = 0;
+
+    var overlayEnabled = chk('overlayPhotoEnabled');
+    var overlayUrl = val('overlayPhotoUrl');
+
+    // ===== ГАЛЕРЕЯ =====
+    var galleryRaw = val('galleryPhotos').split('\n').map(function(l){return l.trim();}).filter(function(l){return l;});
+    var galleryItems = galleryRaw.map(function(line) {
+        var parts = line.split('|');
+        return { url: parts[0].trim(), caption: parts[1] ? parts[1].trim() : '' };
+    });
+    var showGalleryCaptions = chk('showGalleryCaptions');
+
+    // ===== ТОВАР 360 =====
+    var p360Products = parseP360Products(val('p360ProductsRaw'));
+    var p360Speed = parseFloat(val('p360Speed')) || 0.1;
+    var p360Delay = parseFloat(val('p360Delay')) || 1.5;
+    var p360ShowCaptions = chk('p360ShowCaptions');
+    var p360ShowBuyBtn = chk('p360ShowBuyBtn');
+
+    // ===== ВИДЕО =====
     var parsedVideos = parsed.videos || [];
     var inputVideos = val('videosRutube').split('\n').map(function(l){return l.trim();}).filter(function(l){return l;}).map(function(l) {
         var match = l.match(/([a-zA-Z0-9]{32})/);
@@ -519,17 +623,14 @@ function generate(){
 
     var finalVideos = [];
     if (chk('del_videos')) {
-        if (inputVideos.length > 0) {
-            finalVideos = parsedVideos.filter(function(v){ return !inputVideos.includes(v); });
-        } else {
-            finalVideos = [];
-        }
+        if (inputVideos.length > 0) finalVideos = parsedVideos.filter(function(v){ return !inputVideos.includes(v); });
+        else finalVideos = [];
     } else {
         finalVideos = parsedVideos.slice();
         inputVideos.forEach(function(v){ if(!finalVideos.includes(v)) finalVideos.push(v); });
     }
 
-    // МОДЕЛИ
+    // ===== МОДЕЛИ =====
     var parsedModels = parsed.models || [];
     var inputModels = val('models3d').split('\n').map(function(l){return l.trim();}).filter(function(l){return l;}).map(function(line) {
         var match = line.match(/src=["']([^"']+)["']/i);
@@ -538,15 +639,18 @@ function generate(){
 
     var finalModels = [];
     if (chk('del_models')) {
-        if (inputModels.length > 0) {
-            finalModels = parsedModels.filter(function(m){ return !inputModels.includes(m); });
-        } else {
-            finalModels = [];
-        }
+        if (inputModels.length > 0) finalModels = parsedModels.filter(function(m){ return !inputModels.includes(m); });
+        else finalModels = [];
     } else {
         finalModels = parsedModels.slice();
         inputModels.forEach(function(m){ if(!finalModels.includes(m)) finalModels.push(m); });
     }
+
+    var modelCaptions = val('modelCaptions').split('\n').map(function(l){return l.trim();}).filter(function(l){return l;});
+    var showModelCaptions = chk('showModelCaptions');
+    
+    var modelBgEnabled = chk('modelBgEnabled');
+    var modelBgUrl = val('modelBgUrl');
 
     // Наша кнопка
     var ourBtnActive = chk('ourBtnActive') || parsed.hasOurBtn;
@@ -555,8 +659,11 @@ function generate(){
     // Свободные кнопки
     var freeButtons = [];
     for(var i=1; i<=5; i++){
-        var fName = val('freeName'+i);
-        var fUrl = val('freeUrl'+i);
+        var fName = val('freeName'+i); var fUrl = val('freeUrl'+i);
+        if(fName && fUrl) freeButtons.push({name:fName, url:fUrl});
+    }
+    for(var i=1; i<=3; i++){
+        var fName = val('yandexName'+i); var fUrl = val('yandexUrl'+i);
         if(fName && fUrl) freeButtons.push({name:fName, url:fUrl});
     }
 
@@ -571,6 +678,9 @@ function generate(){
     if(reviewsLink) finalButtons.push({label:'ОТЗЫВЫ',href:reviewsLink});
     if(productsLink) finalButtons.push({label:'ТОВАРЫ И УСЛУГИ',href:productsLink});
     if(featuresLink) finalButtons.push({label:'ОСОБЕННОСТИ',href:featuresLink});
+    if(menuLink) finalButtons.push({label:'МЕНЮ',href:menuLink});
+    if(newsLink) finalButtons.push({label:'НОВОСТИ',href:newsLink});
+    
     if(siteLink) finalButtons.push({label:'САЙТ',href:siteLink});
     if(tgLink) finalButtons.push({label:'ТЕЛЕГРАММ',href:tgLink});
     if(waLink) finalButtons.push({label:'ВАТСАП',href:waLink});
@@ -579,25 +689,38 @@ function generate(){
     if(vkLink) finalButtons.push({label:'В КОНТАКТЕ',href:vkLink});
     if(okLink) finalButtons.push({label:'ОДНОКЛАССНИКИ',href:okLink});
     freeButtons.forEach(function(b){ finalButtons.push({label:b.name, href:b.url}); });
+    
+    if (galleryItems.length > 0) finalButtons.push({label:'ФОТО',onclick:'showPhotoGallery'});
+    if (p360Products.length > 0) finalButtons.push({label:'ТОВАР 360',onclick:'showProduct360'});
     if (finalVideos.length > 0) finalButtons.push({label:'ВИДЕО',onclick:'showVideo'});
     if (finalModels.length > 0) finalButtons.push({label:'3D МОДЕЛЬ',onclick:'showModel3d'});
 
-    // JS массив кнопок (3 элемента: [label, href, onclick_fn])
+    // JS массив кнопок
     var dynJs = '[\n' + finalButtons.map(function(b) {
         var parts = [jsStr(b.label)];
-        if (b.href) parts.push(jsStr(b.href));
-        else parts.push('null');
-        if (b.onclick) parts.push(b.onclick);
-        else parts.push('null');
+        if (b.href) parts.push(jsStr(b.href)); else parts.push('null');
+        if (b.onclick) parts.push(b.onclick); else parts.push('null');
         return '            [' + parts.join(', ') + ']';
     }).join(',\n') + '\n        ]';
 
     var photosJs='var photos = [\n'+finalPhotos.map(function(p){return '            '+jsStr(p);}).join(',\n')+'\n        ];';
     var phonesJs='var phoneNumbers = '+(phone1 ? JSON.stringify(val('phone2')?[phone1,val('phone2')]:[phone1]) : '[]')+';\n        var phoneLinks = '+(phone1 ? JSON.stringify(val('phone2')?[phone1Link,val('phone2Link')]:[phone1Link]) : '[]')+';';
 
-    var smartRandom=chk('smartRandom');
     var slideLogicJs;
-    if(smartRandom){
+    if(isSpin360){
+        slideLogicJs=`function nextSlide() { currentSlide = (currentSlide + 1) % photos.length; updateMainSlider(); }
+        function prevSlide() { currentSlide = (currentSlide - 1 + photos.length) % photos.length; updateMainSlider(); }
+        function goToSlideManual(index) { if (index < 0) index = photos.length - 1; if (index >= photos.length) index = 0; currentSlide = index; updateMainSlider(); }
+        function autoSpinLoop() {
+            var delay = currentSlide === 0 ? ${spinDelay * 1000} : ${spinSpeed * 1000};
+            autoTimerMain = setTimeout(function() {
+                nextSlide();
+                autoSpinLoop();
+            }, delay);
+        }
+        function startAutoMain() { if (autoTimerMain) clearTimeout(autoTimerMain); autoSpinLoop(); }
+        function resetAutoMain() { if (autoTimerMain) clearTimeout(autoTimerMain); autoSpinLoop(); }`;
+    } else if(chk('smartRandom')){
         slideLogicJs=`var shuffledOrder = []; var shuffleIdx = 0; var isManualMode = false; var manualTimeout = null; var MANUAL_TIMEOUT_MS = 7000;
         function shuffleArray(arr) { for (var i = arr.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp; } return arr; }
         function reshuffle() { shuffledOrder = []; for (var i = 0; i < photos.length; i++) shuffledOrder.push(i); shuffleArray(shuffledOrder); shuffleIdx = 0; }
@@ -619,15 +742,12 @@ function generate(){
     var tourLocations=[];
     if(tourMode==='multi'){
         val('tourLocations').split('\n').forEach(function(line){
-            line=line.trim();
-            if(!line) return;
+            line=line.trim(); if(!line) return;
             var p=line.split('|');
             if(p.length>=2) tourLocations.push({name:p[0].trim(),url:p.slice(1).join('|').trim()});
         });
     }
-    var tourJs='var tourLocations = [\n'+tourLocations.map(function(t){
-        return '            {name:'+jsStr(t.name)+', url:'+jsStr(t.url)+'}';
-    }).join(',\n')+'\n        ];';
+    var tourJs='var tourLocations = [\n'+tourLocations.map(function(t){ return '            {name:'+jsStr(t.name)+', url:'+jsStr(t.url)+'}'; }).join(',\n')+'\n        ];';
 
     var tourLogicJs = tourMode==='multi' ? `
         function enter3DMode() { is3DMode = true; var scrollDiv = document.getElementById('buttonsScroll'); scrollDiv.innerHTML = ''; tourLocations.forEach(function(item) { var btn = document.createElement('a'); btn.href = item.url; btn.target = '_blank'; btn.className = 'btn'; btn.textContent = item.name; scrollDiv.appendChild(btn); }); secondPanel.classList.remove('hidden-panel'); isControlsVisible = true; toggleBtn.textContent = 'УБРАТЬ КНОПКИ'; if (back3DBtn) back3DBtn.style.display = 'flex'; }
@@ -642,23 +762,215 @@ function generate(){
         function clearAllVideos() { if (typeof videoItems === 'undefined' || !videoItems) return; videoItems.forEach(function(item) { var iframe = item.querySelector('iframe'); if (iframe) iframe.src = ''; }); }
         function scrollVideo(direction) { if (!videoItems.length) return; var container = videoScroll; var itemWidth = container.clientWidth; var currentScroll = container.scrollLeft; var targetScroll = currentScroll + direction * itemWidth; var maxScroll = container.scrollWidth - container.clientWidth; if (targetScroll < 0) targetScroll = 0; if (targetScroll > maxScroll) targetScroll = maxScroll; container.scrollTo({ left: targetScroll, behavior: 'smooth' }); }
         if(document.getElementById('videoPrev')){ document.getElementById('videoPrev').addEventListener('click', function() { scrollVideo(-1); }); document.getElementById('videoNext').addEventListener('click', function() { scrollVideo(1); }); }
-        function showVideo() { hideAllWidgets(); videoWidget.classList.add('active-widget'); document.getElementById('mainHeader').style.display = 'flex'; document.getElementById('mainSubtitle').style.display = 'block'; if (typeof stopRadioIfPlaying === 'function') stopRadioIfPlaying(); resetAutoMain(); var m3d = document.getElementById('model3dIframe'); if(m3d) m3d.src = ''; if (videoItems.length === 0) buildVideoSlider(); setTimeout(function(){ if(videoItems.length > 0) { var firstIframe = videoItems[0].querySelector('iframe'); if (firstIframe && !firstIframe.src) firstIframe.src = videoEmbedUrls[0]; } }, 100); }
+        function showVideo() { hideAllWidgets(); videoWidget.classList.add('active-widget'); document.getElementById('mainHeader').style.display = 'flex'; document.getElementById('mainSubtitle').style.display = 'block'; if (typeof stopRadioIfPlaying === 'function') stopRadioIfPlaying(); resetAutoMain(); var m3d = document.getElementById('model3dIframe'); if(m3d) m3d.src = ''; var p = document.getElementById('photoWidget'); if(p) clearAllPhotos(); if (typeof stopP360Auto === 'function') stopP360Auto(); if (videoItems.length === 0) buildVideoSlider(); setTimeout(function(){ if(videoItems.length > 0) { var firstIframe = videoItems[0].querySelector('iframe'); if (firstIframe && !firstIframe.src) firstIframe.src = videoEmbedUrls[0]; } }, 100); }
         window.showVideo = showVideo; window.clearAllVideos = clearAllVideos;
     ` : `function showVideo() {} window.showVideo = showVideo; function clearAllVideos() {} window.clearAllVideos = clearAllVideos;`;
 
     var model3dJs = finalModels.length > 0 ? `
         var model3dUrls = ${JSON.stringify(finalModels)};
-        var currentModelIndex = 0; var model3dWidget = document.getElementById('model3dWidget'); var model3dIframe = document.getElementById('model3dIframe'); var btnPrev = document.getElementById('modelPrev'); var btnNext = document.getElementById('modelNext');
+        var modelCaptionsList = ${JSON.stringify(modelCaptions)};
+        var currentModelIndex = 0; var model3dWidget = document.getElementById('model3dWidget'); var model3dIframe = document.getElementById('model3dIframe'); var btnPrev = document.getElementById('modelPrev'); var btnNext = document.getElementById('modelNext'); var modelCaptionEl = document.getElementById('modelCaption');
         if (model3dUrls.length <= 1) { if (btnPrev) btnPrev.style.display = 'none'; if (btnNext) btnNext.style.display = 'none'; }
-        function updateModel3d() { if (!model3dIframe) return; model3dIframe.src = model3dUrls[currentModelIndex]; }
+        function updateModel3d() { 
+            if (!model3dIframe) return; 
+            model3dIframe.src = model3dUrls[currentModelIndex]; 
+            if (modelCaptionEl && ${showModelCaptions}) {
+                modelCaptionEl.textContent = modelCaptionsList[currentModelIndex] || '';
+                modelCaptionEl.style.display = 'block';
+            } else if (modelCaptionEl) {
+                modelCaptionEl.style.display = 'none';
+            }
+        }
         function nextModel() { if (model3dUrls.length <= 1) return; currentModelIndex = (currentModelIndex + 1) % model3dUrls.length; updateModel3d(); }
         function prevModel() { if (model3dUrls.length <= 1) return; currentModelIndex = (currentModelIndex - 1 + model3dUrls.length) % model3dUrls.length; updateModel3d(); }
         if (btnPrev) btnPrev.addEventListener('click', prevModel); if (btnNext) btnNext.addEventListener('click', nextModel);
-        function showModel3d() { hideAllWidgets(); model3dWidget.classList.add('active-widget'); document.getElementById('mainHeader').style.display = 'flex'; document.getElementById('mainSubtitle').style.display = 'block'; updateModel3d(); resetAutoMain(); if (typeof clearAllVideos === 'function') clearAllVideos(); }
+        function showModel3d() { hideAllWidgets(); model3dWidget.classList.add('active-widget'); document.getElementById('mainHeader').style.display = 'flex'; document.getElementById('mainSubtitle').style.display = 'block'; updateModel3d(); resetAutoMain(); if (typeof clearAllVideos === 'function') clearAllVideos(); var p = document.getElementById('photoWidget'); if(p) clearAllPhotos(); if (typeof stopP360Auto === 'function') stopP360Auto(); }
         window.showModel3d = showModel3d;
         function closeModel3d() { if (model3dIframe) model3dIframe.src = ''; showGallery(); }
         window.closeModel3d = closeModel3d;
     ` : `function showModel3d() {} window.showModel3d = showModel3d; function closeModel3d() {} window.closeModel3d = closeModel3d;`;
+
+    var photoGalleryJs = galleryItems.length > 0 ? `
+        var photoGalleryItems = ${JSON.stringify(galleryItems)};
+        var photoScroll = document.getElementById('photoScroll'); var photoItems = []; var photoWidget = document.getElementById('photoWidget');
+        function buildPhotoSlider() { 
+            if (!photoScroll) return; 
+            photoScroll.innerHTML = ''; 
+            photoGalleryItems.forEach(function(item, idx) { 
+                var el = document.createElement('div'); 
+                el.className = '_photo-item'; 
+                el.dataset.index = idx; 
+                var img = document.createElement('img'); 
+                img.src = item.url; 
+                el.appendChild(img); 
+                if(${showGalleryCaptions} && item.caption) {
+                    var cap = document.createElement('div');
+                    cap.className = '_photo-caption';
+                    cap.textContent = item.caption;
+                    el.appendChild(cap);
+                }
+                photoScroll.appendChild(el); 
+            }); 
+            photoItems = photoScroll.querySelectorAll('._photo-item'); 
+        }
+        function clearAllPhotos() { if (typeof photoItems === 'undefined' || !photoItems) return; photoScroll.innerHTML = ''; }
+        function scrollPhoto(direction) { if (!photoItems.length) return; var container = photoScroll; var itemWidth = container.clientWidth; var currentScroll = container.scrollLeft; var targetScroll = currentScroll + direction * itemWidth; var maxScroll = container.scrollWidth - container.clientWidth; if (targetScroll < 0) targetScroll = 0; if (targetScroll > maxScroll) targetScroll = maxScroll; container.scrollTo({ left: targetScroll, behavior: 'smooth' }); }
+        if(document.getElementById('photoPrev')){ document.getElementById('photoPrev').addEventListener('click', function() { scrollPhoto(-1); }); document.getElementById('photoNext').addEventListener('click', function() { scrollPhoto(1); }); }
+        function showPhotoGallery() { hideAllWidgets(); photoWidget.classList.add('active-widget'); document.getElementById('mainHeader').style.display = 'flex'; document.getElementById('mainSubtitle').style.display = 'block'; if (typeof stopRadioIfPlaying === 'function') stopRadioIfPlaying(); resetAutoMain(); var m3d = document.getElementById('model3dIframe'); if(m3d) m3d.src = ''; if (typeof clearAllVideos === 'function') clearAllVideos(); if (typeof stopP360Auto === 'function') stopP360Auto(); if (photoItems.length === 0) buildPhotoSlider(); }
+        window.showPhotoGallery = showPhotoGallery; window.clearAllPhotos = clearAllPhotos;
+    ` : `function showPhotoGallery() {} window.showPhotoGallery = showPhotoGallery; function clearAllPhotos() {} window.clearAllPhotos = clearAllPhotos;`;
+
+    // ===== ТОВАР 360 =====
+    var product360Js = p360Products.length > 0 ? `
+        var p360Products = ${JSON.stringify(p360Products)};
+        var p360CurrentProduct = 0;
+        var p360CurrentFrame = 0;
+        var p360Timer = null;
+        var p360Speed = ${p360Speed * 1000};
+        var p360Delay = ${p360Delay * 1000};
+        var p360Widget = document.getElementById('product360Widget');
+        
+        function p360BuildFrames() {
+            var scroll = document.getElementById('product360Scroll');
+            if (!scroll) return;
+            scroll.innerHTML = '';
+            var product = p360Products[p360CurrentProduct];
+            if (!product) return;
+            product.frames.forEach(function(src, idx) {
+                var el = document.createElement('div');
+                el.className = '_p360-item' + (idx === 0 ? ' active' : '');
+                var img = document.createElement('img');
+                img.src = src;
+                img.draggable = false;
+                el.appendChild(img);
+                scroll.appendChild(el);
+            });
+            p360CurrentFrame = 0;
+            p360UpdateCaption();
+            p360UpdateBuyBtn();
+        }
+        
+        function p360UpdateFrames() {
+            var items = document.querySelectorAll('#product360Scroll ._p360-item');
+            items.forEach(function(item, i) {
+                item.classList.toggle('active', i === p360CurrentFrame);
+            });
+        }
+        
+        function p360UpdateCaption() {
+            var cap = document.getElementById('p360Caption');
+            if (!cap) return;
+            var product = p360Products[p360CurrentProduct];
+            cap.textContent = (product && product.name) ? product.name : '';
+        }
+        
+        function p360UpdateBuyBtn() {
+            var btn = document.getElementById('p360BuyBtn');
+            if (!btn) return;
+            var product = p360Products[p360CurrentProduct];
+            if (product && product.link) {
+                btn.href = product.link;
+                btn.textContent = product.btnLabel || 'КУПИТЬ';
+                btn.style.display = 'block';
+            } else {
+                btn.style.display = 'none';
+            }
+        }
+        
+        function p360NextFrame() {
+            var product = p360Products[p360CurrentProduct];
+            if (!product) return;
+            p360CurrentFrame = (p360CurrentFrame + 1) % product.frames.length;
+            p360UpdateFrames();
+        }
+        function p360PrevFrame() {
+            var product = p360Products[p360CurrentProduct];
+            if (!product) return;
+            p360CurrentFrame = (p360CurrentFrame - 1 + product.frames.length) % product.frames.length;
+            p360UpdateFrames();
+        }
+        
+        function p360StartAuto() {
+            if (p360Timer) clearTimeout(p360Timer);
+            function loop() {
+                var delay = p360CurrentFrame === 0 ? p360Delay : p360Speed;
+                p360Timer = setTimeout(function() {
+                    p360NextFrame();
+                    loop();
+                }, delay);
+            }
+            loop();
+        }
+        function p360StopAuto() { if (p360Timer) { clearTimeout(p360Timer); p360Timer = null; } }
+        window.stopP360Auto = p360StopAuto;
+        
+        function p360SwitchProduct(dir) {
+            p360StopAuto();
+            p360CurrentProduct = (p360CurrentProduct + dir + p360Products.length) % p360Products.length;
+            p360BuildFrames();
+            p360StartAuto();
+        }
+        
+        var p360TouchStartX = 0, p360LastMoveX = 0, p360DragStarted = false;
+        var p360ManualTimeout = null;
+        
+        function p360DragStart(x) { p360TouchStartX = x; p360LastMoveX = x; p360DragStarted = false; }
+        function p360DragMove(x) {
+            var diff = x - p360LastMoveX;
+            if (Math.abs(diff) >= 12) {
+                if (!p360DragStarted) {
+                    p360DragStarted = true;
+                    if (p360ManualTimeout) { clearTimeout(p360ManualTimeout); p360ManualTimeout = null; }
+                    p360StopAuto();
+                }
+                var frames = Math.min(Math.floor(Math.abs(diff) / 12), 5);
+                for (var i = 0; i < frames; i++) {
+                    if (diff > 0) p360PrevFrame(); else p360NextFrame();
+                }
+                p360LastMoveX = x;
+            }
+        }
+        function p360DragEnd() {
+            if (p360DragStarted) {
+                if (p360ManualTimeout) clearTimeout(p360ManualTimeout);
+                p360ManualTimeout = setTimeout(function() {
+                    p360ManualTimeout = null;
+                    p360StartAuto();
+                }, 5000);
+            }
+            p360DragStarted = false;
+        }
+        
+        if(document.getElementById('p360PrevProduct')) document.getElementById('p360PrevProduct').addEventListener('click', function(e){ e.stopPropagation(); p360SwitchProduct(-1); });
+        if(document.getElementById('p360NextProduct')) document.getElementById('p360NextProduct').addEventListener('click', function(e){ e.stopPropagation(); p360SwitchProduct(1); });
+        
+        if (p360Widget) {
+            p360Widget.addEventListener('touchstart', function(e) { p360DragStart(e.changedTouches[0].screenX); }, { passive: true });
+            p360Widget.addEventListener('touchmove', function(e) { p360DragMove(e.changedTouches[0].screenX); }, { passive: true });
+            p360Widget.addEventListener('touchend', function(e) { p360DragEnd(); }, { passive: true });
+            
+            var p360MouseDown = false;
+            p360Widget.addEventListener('mousedown', function(e) { e.preventDefault(); p360MouseDown = true; p360DragStart(e.screenX); });
+            document.addEventListener('mousemove', function(e) { if (p360MouseDown) p360DragMove(e.screenX); });
+            document.addEventListener('mouseup', function(e) { if (p360MouseDown) { p360MouseDown = false; p360DragEnd(); } });
+        }
+        
+        function showProduct360() {
+            hideAllWidgets();
+            p360Widget.classList.add('active-widget');
+            document.getElementById('mainHeader').style.display = 'flex';
+            document.getElementById('mainSubtitle').style.display = 'block';
+            if (typeof stopRadioIfPlaying === 'function') stopRadioIfPlaying();
+            resetAutoMain();
+            var m3d = document.getElementById('model3dIframe'); if(m3d) m3d.src = '';
+            if (typeof clearAllVideos === 'function') clearAllVideos();
+            if (typeof clearAllPhotos === 'function') clearAllPhotos();
+            p360CurrentProduct = 0;
+            p360BuildFrames();
+            p360StartAuto();
+        }
+        window.showProduct360 = showProduct360;
+    ` : `function showProduct360() {} window.showProduct360 = showProduct360; function stopP360Auto() {}`;
 
     var ourBtnColor = val('ourBtnColor');
     var ourBtnBg = '#ffffff', ourBtnText = '#000000', ourBtnBorder = '#cccccc';
@@ -679,6 +991,27 @@ function generate(){
     var navBg=val('navBg')||'#07372b';
     var navText=val('navText')||'#99d6cf';
 
+    var overlayHtml = overlayEnabled && overlayUrl ? `<img src="${esc(overlayUrl)}" class="slider-overlay" draggable="false">` : '';
+
+    var p360Html = '';
+    if (p360Products.length > 0) {
+        p360Html = `<div class="_p360" id="product360Widget">
+            <div class="_p360-scroll" id="product360Scroll"></div>
+            ${p360ShowCaptions ? `<div class="_p360-caption" id="p360Caption"></div>` : ''}
+            ${p360ShowBuyBtn ? `<a class="_p360-buy-btn" id="p360BuyBtn" target="_blank" style="display:none;"></a>` : ''}
+            ${p360Products.length > 1 ? `
+                <button class="photo-btn photo-prev" id="p360PrevProduct" style="z-index:25;">‹</button>
+                <button class="photo-btn photo-next" id="p360NextProduct" style="z-index:25;">›</button>
+            ` : ''}
+            <div class="_map-back" style="background:#000; border-top:1px solid #333;">
+                <div class="split-row">
+                    <button class="btn-static burgundy-btn sound-toggle" onclick="toggleSound()" style="border-right:1px solid #333;">ВКЛЮЧИТЬ ЗВУК</button>
+                    <button class="btn-static" onclick="showGallery()">НАЗАД</button>
+                </div>
+            </div>
+        </div>`;
+    }
+
     var headPart = `<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -695,7 +1028,10 @@ function generate(){
     <meta property="og:type" content="website" />
     <title>${esc(name)}</title>
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; }
+        * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; }
+        ::selection { background: transparent; }
+        button, a { outline: none; }
+        img { -webkit-user-drag: none; user-drag: none; }
         html, body { width:100%; height:100%; background:${bgColor}; }
         body { display:flex; align-items:center; justify-content:center; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; padding:0; min-height:100vh; min-height:100dvh; }
         ._c { position:relative; display:flex; flex-direction:column; height:100vh; height:100dvh; padding:0; background:${bgColor}; overflow:hidden; width:330px; max-width:330px; margin:0 auto; }
@@ -705,7 +1041,7 @@ function generate(){
         ._h { display:flex; align-items:center; justify-content:center; gap:6px; font-weight:700; font-size:15px; color:${headerColor}; padding:0; height:32px; flex-shrink:0; cursor:pointer; background:${bgColor}; text-shadow:none; width:100%; letter-spacing:0.3px; border-bottom:1px solid #e0e0e0; }
         ._s { font-size:9px; color:${headerColor}; opacity:0.75; text-align:center; background:${bgColor}; letter-spacing:0.5px; padding:0; height:16px; line-height:16px; flex-shrink:0; width:100%; border-bottom:1px solid #e0e0e0; }
         ._mw { width:100%; flex:1 1 auto; position:relative; display:flex; flex-direction:column; overflow:hidden; border-radius:0; margin:0; background:transparent; }
-        ._mw ._m1, ._mw ._g, ._mw ._v, ._mw ._model3d { display:none; flex-direction:column; width:100%; height:100%; background:${bgColor}; border-radius:0; overflow:hidden; flex:1 0 100%; }
+        ._mw ._m1, ._mw ._g, ._mw ._v, ._mw ._model3d, ._mw ._p, ._mw ._p360 { display:none; flex-direction:column; width:100%; height:100%; background:${bgColor}; border-radius:0; overflow:hidden; flex:1 0 100%; }
         ._mw .active-widget { display:flex !important; }
         ._mw ._m1 ._map-wrap { flex:1; position:relative; overflow:hidden; }
         ._mw ._m1 ._map-wrap iframe { width:100%; height:100%; border:0; display:block; position:absolute; top:0; left:0; }
@@ -713,8 +1049,10 @@ function generate(){
         ._phg { flex:1; min-height:0; position:relative; background:${bgColor}; }
         ._phgw { width:100%; height:100%; position:relative; background:${bgColor}; }
         .slider-container { width:100%; height:100%; position:relative; overflow:hidden; background:${bgColor}; border-radius:0; }
+        .slider-overlay { position:absolute; top:0; left:0; width:100%; height:100%; object-fit:contain; z-index:6; pointer-events:none; }
         .slider-track { width:100%; height:100%; position:relative; }
         .slider-slide { position:absolute; top:0; left:0; width:100%; height:100%; opacity:0; transition:opacity .4s ease; background:${bgColor}; }
+        .spin-mode .slider-slide { transition: none !important; }
         .slider-slide.active { opacity:1; z-index:1; }
         .slider-slide img { width:100%; height:100%; object-fit:cover; display:block; border-radius:0; pointer-events:none; user-select:none; -webkit-user-drag:none; }
         .slider-blocker { position:absolute; top:0; left:0; width:100%; height:100%; z-index:5; background:transparent; pointer-events:auto; touch-action:none; cursor:pointer; }
@@ -722,47 +1060,76 @@ function generate(){
         .slider-dots::-webkit-scrollbar { display:none; }
         .slider-dot { flex:0 0 auto; width:6px; height:6px; border-radius:50%; background:rgba(0,0,0,0.25); cursor:pointer; transition:all .2s ease; pointer-events:auto; }
         .slider-dot.active { background:${dynBg}; width:18px; border-radius:9px; }
+        
         ._v { background:#000; position:relative; }
         ._video-scroll { width:100%; height:100%; overflow-x:auto; overflow-y:hidden; display:flex; flex-wrap:nowrap; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; scroll-behavior:smooth; background:#000; position:relative; }
         ._video-item { min-width:100%; height:100%; scroll-snap-align:start; position:relative; overflow:hidden; background:#000; display:flex; align-items:center; justify-content:center; }
         ._video-item iframe { width:100%; height:100%; border:0; display:block; object-fit:contain; background:#000; }
-        .video-btn { position:absolute; top:50%; transform:translateY(-50%); background:rgba(0,0,0,0.7); color:#fff; border:none; width:36px; height:36px; border-radius:50%; cursor:pointer; z-index:20; font-size:22px; display:flex; align-items:center; justify-content:center; transition:background 0.2s, transform 0.2s; backdrop-filter:blur(2px); padding:0; line-height:1; }
-        .video-btn:active { background:rgba(0,0,0,0.9); transform:translateY(-50%) scale(0.92); }
-        .video-prev { left:8px; }
-        .video-next { right:8px; }
-        ._model3d ._model3d-iframe-wrap { flex:1; position:relative; background:#000; overflow:hidden; }
+        
+        ._p { background:#000; position:relative; }
+        ._photo-scroll { width:100%; height:100%; overflow-x:auto; overflow-y:hidden; display:flex; flex-wrap:nowrap; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; scroll-behavior:smooth; background:#000; position:relative; }
+        ._photo-item { min-width:100%; height:100%; scroll-snap-align:start; position:relative; overflow:hidden; background:#000; display:flex; align-items:center; justify-content:center; }
+        ._photo-item img { width:100%; height:100%; border:0; display:block; object-fit:contain; background:#000; }
+        ._photo-caption { position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.6); color:#fff; padding:10px; text-align:center; font-size:14px; font-weight:500; z-index:5;}
+
+        ._p360 { background:#000; position:relative; }
+        ._p360-scroll { width:100%; height:100%; position:relative; overflow:hidden; background:#000; }
+        ._p360-item { position:absolute; top:0; left:0; width:100%; height:100%; opacity:0; transition:none; background:#000; display:flex; align-items:center; justify-content:center; -webkit-user-drag:none; user-drag:none; }
+        ._p360-item.active { opacity:1; z-index:1; }
+        ._p360-item img { width:100%; height:100%; border:0; display:block; object-fit:contain; background:#000; pointer-events:none; -webkit-user-drag:none; user-drag:none; }
+        ._p360-caption { position:absolute; top:10px; left:0; right:0; color:#fff; text-align:center; font-size:16px; font-weight:700; z-index:15; text-shadow:0 1px 3px rgba(0,0,0,0.8); padding:0 40px; }
+        ._p360-buy-btn { position:absolute; bottom:70px; left:50%; transform:translateX(-50%); background:${dynBg}; color:${dynText}; padding:12px 24px; border-radius:25px; font-weight:700; text-decoration:none; font-size:14px; z-index:15; box-shadow:0 4px 15px rgba(0,0,0,0.5); border:2px solid ${statBg}; white-space:nowrap; }
+        ._p360-buy-btn:active { transform:translateX(-50%) scale(0.95); }
+
+        .video-btn, .photo-btn { position:absolute; top:50%; transform:translateY(-50%); background:rgba(0,0,0,0.7); color:#fff; border:none; width:36px; height:36px; border-radius:50%; cursor:pointer; z-index:20; font-size:22px; display:flex; align-items:center; justify-content:center; transition:background 0.2s, transform 0.2s; backdrop-filter:blur(2px); padding:0; line-height:1; outline:none; }
+        .video-btn:active, .photo-btn:active { background:rgba(0,0,0,0.9); transform:translateY(-50%) scale(0.92); }
+        .video-btn:focus, .photo-btn:focus { outline:none; }
+        .video-prev, .photo-prev { left:8px; }
+        .video-next, .photo-next { right:8px; }
+        
+        ._model3d ._model3d-iframe-wrap { flex:1; position:relative; background:transparent; overflow:hidden; }
+        ._model3d ._model3d-iframe-wrap img.model-bg-img { position:absolute; top:0; left:0; width:100%; height:100%; object-fit:contain; z-index:1; background:#000; }
         ._model3d ._model3d-iframe-wrap iframe {
             position: absolute; top: -5%; left: -10%; width: 120%; height: 120%; transform: scale(1.1); clip-path: inset(0 0 8% 0); border: 0; display: block; pointer-events: auto; z-index: 2; background: transparent;
         }
-        ._model3d .model-nav-btn { position:absolute; top:50%; transform:translateY(-50%); z-index:20; background:rgba(0,0,0,0.6); color:#fff; border:none; width:36px; height:36px; border-radius:50%; cursor:pointer; font-size:22px; display:flex; align-items:center; justify-content:center; padding:0; line-height:1; }
+        ._model3d .model-nav-btn { position:absolute; top:50%; transform:translateY(-50%); z-index:20; background:rgba(0,0,0,0.6); color:#fff; border:none; width:36px; height:36px; border-radius:50%; cursor:pointer; font-size:22px; display:flex; align-items:center; justify-content:center; padding:0; line-height:1; outline:none; }
         ._model3d .model-nav-btn:active { background:rgba(0,0,0,0.9); }
+        ._model3d .model-nav-btn:focus { outline:none; }
         ._model3d .model-prev { left:8px; }
         ._model3d .model-next { right:8px; }
+        ._model-caption { position:absolute; bottom:60px; left:0; right:0; background:rgba(0,0,0,0.6); color:#fff; padding:10px; text-align:center; font-size:14px; font-weight:500; z-index:5;}
+
         ._secondPanel { flex:0 1 auto; max-height:50%; overflow:hidden; display:flex; flex-direction:column; background:transparent; transition:all 0.3s ease; }
         ._secondPanel.hidden-panel { display:none !important; }
         ._scrollButtons { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:0; -webkit-overflow-scrolling:touch; padding:0 !important; background:${bgColor}; }
-        ._scrollButtons .btn { background:${dynBg}; color:${dynText}; border:none; display:inline-flex; align-items:center; justify-content:center; padding:0 8px; height:44px !important; min-height:44px; text-decoration:none; border-radius:0; width:100%; text-align:center; cursor:pointer; font-size:14px; font-weight:700; transition:all .2s ease; flex-shrink:0; margin:0 0 1px 0; letter-spacing:0.3px; }
+        ._scrollButtons .btn { background:${dynBg}; color:${dynText}; border:none; display:inline-flex; align-items:center; justify-content:center; padding:0 8px; height:44px !important; min-height:44px; text-decoration:none; border-radius:0; width:100%; text-align:center; cursor:pointer; font-size:14px; font-weight:700; transition:all .2s ease; flex-shrink:0; margin:0 0 1px 0; letter-spacing:0.3px; outline:none; }
         ._scrollButtons .btn:last-child { margin-bottom:0; }
         ._scrollButtons .btn:active { background:${bgColor}; color:${dynText}; transform:scale(0.98); }
+        ._scrollButtons .btn:focus { outline:none; }
         ._scrollButtons::-webkit-scrollbar { width:2px; }
         ._scrollButtons::-webkit-scrollbar-track { background:rgba(0,0,0,0.05); }
         ._scrollButtons::-webkit-scrollbar-thumb { background:${dynBg}; border-radius:0; }
+        
         ._bottomFixed { flex-shrink:0; display:flex; flex-direction:column; gap:0; background:${bgColor}; border-top:none; padding:0 !important; }
-        ._bottomFixed .btn-static { display:inline-flex; align-items:center; justify-content:center; background:${statBg}; color:${statText}; padding:0 8px; height:44px !important; min-height:44px; text-decoration:none !important; border-radius:0 !important; width:100%; text-align:center; border:none; cursor:pointer; font-size:14px; font-weight:700; transition:all .2s ease; flex-shrink:0; margin:0; letter-spacing:0.3px; }
+        ._bottomFixed .btn-static { display:inline-flex; align-items:center; justify-content:center; background:${statBg}; color:${statText}; padding:0 8px; height:44px !important; min-height:44px; text-decoration:none !important; border-radius:0 !important; width:100%; text-align:center; border:none; cursor:pointer; font-size:14px; font-weight:700; transition:all .2s ease; flex-shrink:0; margin:0; letter-spacing:0.3px; outline:none; }
         ._bottomFixed .btn-static:active { background:${dynBg}; color:${dynText}; transform:scale(0.98); }
         ._bottomFixed .btn-static.burgundy-btn { background:${navBg}; color:${navText}; border:none; }
         ._bottomFixed .btn-static.burgundy-btn:active { background:${statBg}; color:${statText}; }
+        ._bottomFixed .btn-static:focus { outline:none; }
         ._bottomFixed .split-row { display:flex; width:100%; }
         ._bottomFixed .split-row button { height:44px; min-height:44px; border-radius:0 !important; flex:1; width:50%; margin:0; border-top:1px solid ${bgColor}; }
         ._bottomFixed .split-row button:first-child { border-right:1px solid ${bgColor}; }
+        
         ._map-back { display:flex; flex-direction:column; gap:0; background:${bgColor}; flex-shrink:0; border-top:none; padding:0 !important; }
-        ._map-back .btn-static { display:inline-flex; align-items:center; justify-content:center; background:${statBg}; color:${statText}; padding:0 8px; height:44px !important; min-height:44px; text-decoration:none !important; border-radius:0 !important; width:100%; text-align:center; border:none; cursor:pointer; font-size:14px; font-weight:700; transition:all .2s ease; flex-shrink:0; margin:0; letter-spacing:0.3px; }
+        ._map-back .btn-static { display:inline-flex; align-items:center; justify-content:center; background:${statBg}; color:${statText}; padding:0 8px; height:44px !important; min-height:44px; text-decoration:none !important; border-radius:0 !important; width:100%; text-align:center; border:none; cursor:pointer; font-size:14px; font-weight:700; transition:all .2s ease; flex-shrink:0; margin:0; letter-spacing:0.3px; outline:none; }
         ._map-back .btn-static:active { background:${dynBg}; color:${dynText}; transform:scale(0.98); }
         ._map-back .btn-static.burgundy-btn { background:${navBg}; color:${navText}; border:none; }
         ._map-back .btn-static.burgundy-btn:active { background:${statBg}; color:${statText}; }
+        ._map-back .btn-static:focus { outline:none; }
         ._map-back .split-row { display:flex; width:100%; }
         ._map-back .split-row button { height:44px; min-height:44px; border-radius:0 !important; flex:1; width:50%; margin:0; border-top:1px solid ${bgColor}; }
         ._map-back .split-row button:first-child { border-right:1px solid ${bgColor}; }
+        
         ._lb { display:none !important; }
         .phone-rotate { transition:all 0.2s ease; }
     </style>
@@ -786,11 +1153,12 @@ function generate(){
                     </div>
                 </div>
             </div>` : ''}
-            <div class="_g active-widget" id="galleryBlock">
+            <div class="_g active-widget ${isSpin360 ? 'spin-mode' : ''}" id="galleryBlock">
                 <div class="_phg">
                     <div class="_phgw">
                         <div class="slider-container" id="mainSlider">
                             <div class="slider-track" id="sliderTrack"></div>
+                            ${overlayHtml}
                             <div class="slider-blocker" id="sliderBlocker"></div>
                             <div class="slider-dots" id="sliderDots"></div>
                         </div>
@@ -810,6 +1178,18 @@ function generate(){
                     ${ourBtnHtml}
                 </div>
             </div>
+            ${galleryItems.length > 0 ? `<div class="_p" id="photoWidget">
+                <div class="_photo-scroll" id="photoScroll"></div>
+                <button class="photo-btn photo-prev" id="photoPrev">‹</button>
+                <button class="photo-btn photo-next" id="photoNext">›</button>
+                <div class="_map-back" style="background:#000; border-top:1px solid #333;">
+                    <div class="split-row">
+                        <button class="btn-static burgundy-btn sound-toggle" onclick="toggleSound()" style="border-right:1px solid #333;">ВКЛЮЧИТЬ ЗВУК</button>
+                        <button class="btn-static" onclick="showGallery()">НАЗАД</button>
+                    </div>
+                </div>
+            </div>` : ''}
+            ${p360Html}
             ${finalVideos.length > 0 ? `<div class="_v" id="videoWidget">
                 <div class="_video-scroll" id="videoScroll"></div>
                 <button class="video-btn video-prev" id="videoPrev">‹</button>
@@ -820,10 +1200,12 @@ function generate(){
             </div>` : ''}
             ${finalModels.length > 0 ? `<div class="_model3d" id="model3dWidget">
                 <div class="_model3d-iframe-wrap">
+                    ${modelBgEnabled ? `<img src="${esc(modelBgUrl)}" class="model-bg-img">` : ''}
                     <iframe id="model3dIframe" frameborder="0" allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true" allow="autoplay; fullscreen; xr-spatial-tracking" xr-spatial-tracking execution-while-out-of-viewport execution-while-not-rendered web-share></iframe>
                 </div>
                 <button class="model-nav-btn model-prev" id="modelPrev">‹</button>
                 <button class="model-nav-btn model-next" id="modelNext">›</button>
+                <div id="modelCaption" class="_model-caption" style="display:none;"></div>
                 <div class="_map-back" style="background:${bgColor}; border-top:none;">
                     <div class="split-row">
                         <button class="btn-static burgundy-btn sound-toggle" onclick="toggleSound()" style="border-right:1px solid ${bgColor};">ВКЛЮЧИТЬ ЗВУК</button>
@@ -856,6 +1238,8 @@ function generate(){
         var mapWidget = document.getElementById('mapWidget');
         var galleryBlock = document.getElementById('galleryBlock');
         var videoWidget = document.getElementById('videoWidget');
+        var photoWidget = document.getElementById('photoWidget');
+        var product360Widget = document.getElementById('product360Widget');
         var secondPanel = document.getElementById('secondPanel');
         var toggleBtn = document.getElementById('controlsToggleBtn');
         var callBtn = document.getElementById('callBtn');
@@ -864,7 +1248,7 @@ function generate(){
         var is3DMode = false;
         
         function hideAllWidgets() {
-            var arr = [mapWidget, galleryBlock, videoWidget, document.getElementById('model3dWidget')];
+            var arr = [mapWidget, galleryBlock, videoWidget, document.getElementById('model3dWidget'), photoWidget, product360Widget];
             arr.forEach(function(w) { if (w) w.classList.remove('active-widget'); });
         }
         function showGallery() {
@@ -875,6 +1259,8 @@ function generate(){
             if (is3DMode && typeof exit3DMode === 'function') exit3DMode();
             resetAutoMain();
             if (typeof clearAllVideos === 'function') clearAllVideos();
+            if (typeof clearAllPhotos === 'function') clearAllPhotos();
+            if (typeof stopP360Auto === 'function') stopP360Auto();
             var m3d = document.getElementById('model3dIframe'); if(m3d) m3d.src = '';
         }
         function showMap() {
@@ -885,6 +1271,8 @@ function generate(){
             document.getElementById('mainHeader').style.display = 'flex';
             document.getElementById('mainSubtitle').style.display = 'block';
             if (typeof clearAllVideos === 'function') clearAllVideos();
+            if (typeof clearAllPhotos === 'function') clearAllPhotos();
+            if (typeof stopP360Auto === 'function') stopP360Auto();
             var m3d = document.getElementById('model3dIframe'); if(m3d) m3d.src = '';
         }
         function toggleControls() {
@@ -909,11 +1297,14 @@ function generate(){
         var autoTimerMain = null;
         var sliderTrack = document.getElementById('sliderTrack');
         var dotsContainer = document.getElementById('sliderDots');
+        
         ${slideLogicJs}
         ${tourJs}
         ${tourLogicJs}
         ${videoJs}
         ${model3dJs}
+        ${photoGalleryJs}
+        ${product360Js}
         
         function buildMainSlider() {
             sliderTrack.innerHTML = '';
@@ -961,17 +1352,71 @@ function generate(){
                 dotsContainer.scrollTo({ left: targetScroll, behavior: 'smooth' });
             }
         }
-        var touchStartX = 0, touchEndX = 0;
+        
+        var touchStartX = 0, touchEndX = 0, lastMoveX = 0;
+        var spinManualTimeout = null;
+        var dragStarted = false;
+        var mouseDown = false;
         var sliderContainer = document.getElementById('mainSlider');
-        sliderContainer.addEventListener('touchstart', function(e) {
-            touchStartX = e.changedTouches[0].screenX;
-        }, false);
-        sliderContainer.addEventListener('touchend', function(e) {
-            touchEndX = e.changedTouches[0].screenX;
-            if (touchEndX < touchStartX - 50) nextSlide();
-            if (touchEndX > touchStartX + 50) prevSlide();
-        }, false);
-        ${smartRandom ? 'reshuffle();' : ''}
+        
+        function onDragStart(x) {
+            touchStartX = x;
+            lastMoveX = x;
+            dragStarted = false;
+        }
+        function onDragMove(x) {
+            if (!${isSpin360}) return;
+            var diff = x - lastMoveX;
+            if (Math.abs(diff) >= 12) {
+                if (!dragStarted) {
+                    dragStarted = true;
+                    if (spinManualTimeout) { clearTimeout(spinManualTimeout); spinManualTimeout = null; }
+                    if (autoTimerMain) { clearTimeout(autoTimerMain); autoTimerMain = null; }
+                }
+                var frames = Math.min(Math.floor(Math.abs(diff) / 12), 5);
+                for (var i = 0; i < frames; i++) {
+                    if (diff > 0) prevSlide(); else nextSlide();
+                }
+                lastMoveX = x;
+            }
+        }
+        function onDragEnd(x) {
+            touchEndX = x;
+            if (!${isSpin360}) {
+                if (touchEndX < touchStartX - 50) nextSlide();
+                if (touchEndX > touchStartX + 50) prevSlide();
+            } else {
+                if (dragStarted) {
+                    if (spinManualTimeout) clearTimeout(spinManualTimeout);
+                    spinManualTimeout = setTimeout(function() {
+                        spinManualTimeout = null;
+                        startAutoMain();
+                    }, 5000);
+                }
+            }
+            dragStarted = false;
+        }
+        
+        sliderContainer.addEventListener('touchstart', function(e) { onDragStart(e.changedTouches[0].screenX); }, { passive: true });
+        sliderContainer.addEventListener('touchmove', function(e) { onDragMove(e.changedTouches[0].screenX); }, { passive: true });
+        sliderContainer.addEventListener('touchend', function(e) { onDragEnd(e.changedTouches[0].screenX); }, { passive: true });
+        
+        sliderContainer.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            mouseDown = true;
+            onDragStart(e.screenX);
+        });
+        document.addEventListener('mousemove', function(e) {
+            if (!mouseDown) return;
+            onDragMove(e.screenX);
+        });
+        document.addEventListener('mouseup', function(e) {
+            if (!mouseDown) return;
+            mouseDown = false;
+            onDragEnd(e.screenX);
+        });
+        
+        ${(chk('smartRandom') && !isSpin360) ? 'reshuffle();' : ''}
         currentSlide = 0;
         buildMainSlider();
         startAutoMain();
