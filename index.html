@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>GENERATOR</title>
 
-<!-- НАСТРОЙКИ ДЛЯ МЕССЕНДЖЕРОВ (OG) -->
 <meta property="og:title" content="GENERATOR" />
 <meta property="og:description" content="Генератор визиток PRO" />
 <meta property="og:image" content="https://avatars.mds.yandex.net/get-altay/22248647/2a000001a15ead1c08c22526aa64b57f7451/XXL" />
@@ -45,6 +44,13 @@ input[type=color]{padding:2px;height:36px;cursor:pointer}
 .del-check input{width:auto;height:14px;accent-color:#e74c3c;}
 .hint{font-size:11px;color:#888;margin-top:4px;line-height:1.4}
 .free-row{display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-bottom:8px}
+.pick-btn{padding:0 8px;border:1px solid #ddd;border-radius:6px;cursor:pointer;background:#fff;font-size:16px;line-height:1;min-width:36px}
+.pick-btn:hover{background:#f0f8ff}
+.color-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.color-field{display:flex;gap:4px;align-items:center}
+.color-field input[type=color]{flex:0 0 56px;padding:2px}
+.color-field input[type=text]{flex:1;font-family:monospace;font-size:12px}
+@media(max-width:600px){.color-row{grid-template-columns:1fr}}
 .phone-mockup{width:350px;height:700px;margin:20px auto;border:14px solid #1a1a1a;border-radius:40px;background:#000;position:relative;overflow:hidden;box-shadow:0 15px 40px rgba(0,0,0,0.3);box-sizing:content-box}
 .phone-mockup::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:20px;background:#1a1a1a;border-bottom-left-radius:12px;border-bottom-right-radius:12px;z-index:10}
 .phone-mockup iframe{width:100%;height:100%;border:none;background:#fff;display:block}
@@ -62,7 +68,7 @@ input[type=color]{padding:2px;height:36px;cursor:pointer}
 <label>Вставь код старой визитки сюда:</label>
 <textarea id="existingCode" style="min-height:120px" placeholder="Вставьте HTML-код визитки..."></textarea>
 <button type="button" class="btn-parse" onclick="parseAndFill()">РАСПОЗНАТЬ И ЗАПОЛНИТЬ ФОРМУ</button>
-<div class="hint">Генератор просканирует код и заполнит поля ниже. Если нужно что-то удалить — используйте красные галочки «УДАЛИТЬ».</div>
+<div class="hint">Генератор просканирует код и заполнит поля ниже (включая цвета кнопок). Если нужно что-то удалить — используйте красные галочки «УДАЛИТЬ».</div>
 </div>
 
 <div class="section">
@@ -153,21 +159,90 @@ input[type=color]{padding:2px;height:36px;cursor:pointer}
 
 <div class="section">
 <h2>6. Цвета</h2>
-<div class="row3">
-<div><label>Общий фон</label><input type="color" id="bgColor" value="#ffffff"></div>
-<div><label>Цвет шапки</label><input type="color" id="headerColor" value="#07372b"></div>
+
+<div style="margin-bottom:12px; padding:10px; background:#f0f8ff; border-radius:6px; border:1px solid #cce5ff;">
+    <label>🎨 Подбор цвета с логотипа</label>
+    <input type="text" id="logoPickerUrl" placeholder="Вставь ссылку на логотип (https://...)" oninput="loadLogoForPicker()" style="margin-bottom:8px;">
+    <div style="text-align:center; margin-bottom:8px;">
+        <img id="logoPickerImg" style="max-width:100%; max-height:180px; border-radius:6px; display:none; cursor:crosshair; background:#fff; border:1px solid #ddd;" onclick="pickColorFromLogo(event)">
+    </div>
+    <div class="hint" id="logoPickerHint">Шаг 1: нажми 🎨 рядом с нужным цветом. Шаг 2: кликни по логотипу — цвет возьмётся автоматически.</div>
 </div>
-<div class="row3">
-<div><label>Динамичные: фон</label><input type="color" id="dynBg" value="#ecf0ef"></div>
-<div><label>Динамичные: текст</label><input type="color" id="dynText" value="#07372b"></div>
+
+<div class="color-row">
+    <div>
+        <label>Общий фон</label>
+        <div class="color-field">
+            <input type="color" id="bgColor" value="#ffffff" oninput="updateHexFromColor('bgColor')">
+            <input type="text" id="bgColorHex" value="#ffffff" oninput="syncHex('bgColor')">
+            <button type="button" class="pick-btn" data-pick="bgColor" onclick="activatePick('bgColor')" title="Взять с логотипа">🎨</button>
+        </div>
+    </div>
+    <div>
+        <label>Цвет шапки</label>
+        <div class="color-field">
+            <input type="color" id="headerColor" value="#07372b" oninput="updateHexFromColor('headerColor')">
+            <input type="text" id="headerColorHex" value="#07372b" oninput="syncHex('headerColor')">
+            <button type="button" class="pick-btn" data-pick="headerColor" onclick="activatePick('headerColor')" title="Взять с логотипа">🎨</button>
+        </div>
+    </div>
 </div>
-<div class="row3">
-<div><label>Статичные: фон</label><input type="color" id="statBg" value="#24584b"></div>
-<div><label>Статичные: текст</label><input type="color" id="statText" value="#ffffff"></div>
+
+<div class="color-row">
+    <div>
+        <label>Динамичные: фон</label>
+        <div class="color-field">
+            <input type="color" id="dynBg" value="#ecf0ef" oninput="updateHexFromColor('dynBg')">
+            <input type="text" id="dynBgHex" value="#ecf0ef" oninput="syncHex('dynBg')">
+            <button type="button" class="pick-btn" data-pick="dynBg" onclick="activatePick('dynBg')" title="Взять с логотипа">🎨</button>
+        </div>
+    </div>
+    <div>
+        <label>Динамичные: текст</label>
+        <div class="color-field">
+            <input type="color" id="dynText" value="#07372b" oninput="updateHexFromColor('dynText')">
+            <input type="text" id="dynTextHex" value="#07372b" oninput="syncHex('dynText')">
+            <button type="button" class="pick-btn" data-pick="dynText" onclick="activatePick('dynText')" title="Взять с логотипа">🎨</button>
+        </div>
+    </div>
 </div>
-<div class="row3">
-<div><label>Звук/управление: фон</label><input type="color" id="navBg" value="#07372b"></div>
-<div><label>Звук/управление: текст</label><input type="color" id="navText" value="#99d6cf"></div>
+
+<div class="color-row">
+    <div>
+        <label>Статичные: фон</label>
+        <div class="color-field">
+            <input type="color" id="statBg" value="#24584b" oninput="updateHexFromColor('statBg')">
+            <input type="text" id="statBgHex" value="#24584b" oninput="syncHex('statBg')">
+            <button type="button" class="pick-btn" data-pick="statBg" onclick="activatePick('statBg')" title="Взять с логотипа">🎨</button>
+        </div>
+    </div>
+    <div>
+        <label>Статичные: текст</label>
+        <div class="color-field">
+            <input type="color" id="statText" value="#ffffff" oninput="updateHexFromColor('statText')">
+            <input type="text" id="statTextHex" value="#ffffff" oninput="syncHex('statText')">
+            <button type="button" class="pick-btn" data-pick="statText" onclick="activatePick('statText')" title="Взять с логотипа">🎨</button>
+        </div>
+    </div>
+</div>
+
+<div class="color-row">
+    <div>
+        <label>Звук/управление: фон</label>
+        <div class="color-field">
+            <input type="color" id="navBg" value="#07372b" oninput="updateHexFromColor('navBg')">
+            <input type="text" id="navBgHex" value="#07372b" oninput="syncHex('navBg')">
+            <button type="button" class="pick-btn" data-pick="navBg" onclick="activatePick('navBg')" title="Взять с логотипа">🎨</button>
+        </div>
+    </div>
+    <div>
+        <label>Звук/управление: текст</label>
+        <div class="color-field">
+            <input type="color" id="navText" value="#99d6cf" oninput="updateHexFromColor('navText')">
+            <input type="text" id="navTextHex" value="#99d6cf" oninput="syncHex('navText')">
+            <button type="button" class="pick-btn" data-pick="navText" onclick="activatePick('navText')" title="Взять с логотипа">🎨</button>
+        </div>
+    </div>
 </div>
 </div>
 
@@ -191,13 +266,33 @@ input[type=color]{padding:2px;height:36px;cursor:pointer}
 </div>
 
 <div class="row" style="margin-top:10px; background:#f0f8ff; padding:10px; border-radius:5px; border:1px solid #cce5ff;">
-    <div>
-        <div class="check"><input type="checkbox" id="overlayPhotoEnabled" onchange="document.getElementById('overlayPhotoUrlWrap').style.display = this.checked ? 'block' : 'none'"><label for="overlayPhotoEnabled" style="margin:0;cursor:pointer;font-weight:bold;color:#0056b3;">Наложение картинки на слайдер (PNG)</label></div>
+    <div style="grid-column:1/-1;">
+        <div class="check"><input type="checkbox" id="overlayPhotoEnabled" onchange="toggleOverlayFields()"><label for="overlayPhotoEnabled" style="margin:0;cursor:pointer;font-weight:bold;color:#0056b3;">Наложение картинки на слайдер (PNG)</label></div>
         <div class="hint">Например, "Добро пожаловать" с прозрачным фоном.</div>
     </div>
-    <div id="overlayPhotoUrlWrap" style="display:none;">
-        <label>URL картинки (с прозрачностью)</label>
-        <input type="text" id="overlayPhotoUrl" placeholder="https://...">
+    <div id="overlayPhotoUrlWrap" style="display:none; grid-column:1/-1; margin-top:8px;">
+        <div class="check"><input type="checkbox" id="overlayLocal" onchange="toggleOverlaySource()"><label for="overlayLocal" style="margin:0;cursor:pointer;font-weight:bold;color:#27ae60;">📁 Использовать локальный файл из папки визитки</label></div>
+        <div class="hint">Если включено — картинка берётся из папки <b>imag/</b> рядом с index.html визитки (не зависит от CORS).</div>
+
+        <div id="overlayLocalWrap" style="display:none; margin-top:8px;">
+            <label>Путь к локальному файлу (относительно index.html)</label>
+            <input type="text" id="overlayLocalPath" value="imag/0001.png" placeholder="imag/0001.png">
+        </div>
+
+        <div id="overlayUrlWrap" style="margin-top:8px;">
+            <label>URL картинки (с прозрачностью)</label>
+            <input type="text" id="overlayPhotoUrl" placeholder="https://...">
+        </div>
+
+        <div class="check" style="margin-top:10px;"><input type="checkbox" id="overlayTimed" onchange="toggleOverlayTimedFields()"><label for="overlayTimed" style="margin:0;cursor:pointer;">Мигающий режим (скрывать через время)</label></div>
+        <div id="overlayTimedWrap" style="display:none; margin-top:8px; padding:8px; background:#fff; border-radius:4px; border:1px solid #ddd;">
+            <div class="row">
+                <div><label>Показывать (сек)</label><input type="number" id="overlayShowSec" value="5" step="0.5" min="0.5"></div>
+                <div><label>Скрывать (сек)</label><input type="number" id="overlayHideSec" value="10" step="0.5" min="0.5"></div>
+            </div>
+            <div class="check" style="margin-top:8px;"><input type="checkbox" id="overlayLoop"><label for="overlayLoop" style="margin:0;cursor:pointer;">Циклить (появляется снова и снова)</label></div>
+            <div class="hint">Если галочка не стоит — логотип покажется один раз, а потом исчезнет навсегда.</div>
+        </div>
     </div>
 </div>
 </div>
@@ -218,7 +313,6 @@ input[type=color]{padding:2px;height:36px;cursor:pointer}
 КНОПКА: КУПИТЬ
 КАДР: https://...кадр1
 КАДР: https://...кадр2
-КАДР: https://...кадр3
 ---
 НАЗВАНИЕ: Портфель кожаный
 ССЫЛКА: https://shop.example.com/leather-bag
@@ -227,6 +321,7 @@ input[type=color]{padding:2px;height:36px;cursor:pointer}
 КАДР: https://...кадр2</pre>
 </label>
 <textarea id="p360ProductsRaw" style="min-height:160px" placeholder="НАЗВАНИЕ: Товар 1&#10;ССЫЛКА: https://...&#10;КНОПКА: КУПИТЬ&#10;КАДР: https://...кадр1&#10;КАДР: https://...кадр2&#10;---&#10;НАЗВАНИЕ: Товар 2&#10;..."></textarea>
+<div style="margin-top:10px;"><label>Название кнопки в меню</label><input type="text" id="p360ButtonLabel" value="ТОВАР 360" placeholder="ТОВАР 360 / НАШИ ФЛАГМАНЫ / ИНТЕРЬЕР 360"></div>
 <div class="row">
     <div><label>Скорость облёта (сек)</label><input type="number" id="p360Speed" value="0.1" step="0.01" min="0.01" max="10"></div>
     <div><label>Пауза на 1-м кадре (сек)</label><input type="number" id="p360Delay" value="1.5" step="0.1" min="0"></div>
@@ -308,6 +403,124 @@ function chk(id){var e=document.getElementById(id);return e?e.checked:false;}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function jsStr(s){return JSON.stringify(String(s==null?'':s));}
 
+// ========== ЦВЕТОВОЙ ПИКЕР (логотип) ==========
+var pickTarget = null;
+
+function syncHex(colorId) {
+    var colorInput = document.getElementById(colorId);
+    var hexInput = document.getElementById(colorId + 'Hex');
+    if (!hexInput) return;
+    var v = hexInput.value.trim();
+    if (/^#[0-9a-fA-F]{3}$/.test(v)) {
+        v = '#' + v[1]+v[1]+v[2]+v[2]+v[3]+v[3];
+    }
+    if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+        colorInput.value = v.toLowerCase();
+    }
+}
+function updateHexFromColor(colorId) {
+    var colorInput = document.getElementById(colorId);
+    var hexInput = document.getElementById(colorId + 'Hex');
+    if (hexInput) hexInput.value = colorInput.value.toLowerCase();
+}
+
+function resetPickButtons() {
+    var btns = document.querySelectorAll('.pick-btn');
+    for (var i = 0; i < btns.length; i++) {
+        btns[i].style.background = '#fff';
+        btns[i].style.color = '';
+    }
+}
+
+function activatePick(id) {
+    pickTarget = id;
+    resetPickButtons();
+    var btn = document.querySelector('.pick-btn[data-pick="' + id + '"]');
+    if (btn) {
+        btn.style.background = '#e67e22';
+        btn.style.color = '#fff';
+    }
+    var hint = document.getElementById('logoPickerHint');
+    hint.textContent = '✅ Активно: кликни по логотипу — возьмём цвет для "' + id + '"';
+    hint.style.color = '#e67e22';
+}
+
+var _logoCorsTried = false;
+function loadLogoForPicker() {
+    var url = document.getElementById('logoPickerUrl').value.trim();
+    var img = document.getElementById('logoPickerImg');
+    var hint = document.getElementById('logoPickerHint');
+    if (!url) { img.style.display = 'none'; return; }
+    _logoCorsTried = false;
+    img.crossOrigin = 'anonymous';
+    img.onerror = function() {
+        if (!_logoCorsTried) {
+            _logoCorsTried = true;
+            img.removeAttribute('crossorigin');
+            img.src = url;
+            hint.textContent = '⚠ Логотип без CORS — пипетка может не сработать. Введи код вручную в поле #xxxxxx.';
+            hint.style.color = '#e67e22';
+        }
+    };
+    img.onload = function() {
+        if (!_logoCorsTried) {
+            hint.textContent = '✓ Логотип загружен. Нажми 🎨 рядом с цветом, потом кликни по логотипу.';
+            hint.style.color = '#27ae60';
+        }
+    };
+    img.src = url;
+    img.style.display = 'inline-block';
+}
+
+function pickColorFromLogo(e) {
+    if (!pickTarget) {
+        alert('Сначала нажми 🎨 рядом с нужным цветом, чтобы активировать пипетку');
+        return;
+    }
+    var img = e.currentTarget;
+    try {
+        var canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        var rect = img.getBoundingClientRect();
+        var x = Math.floor((e.clientX - rect.left) * (canvas.width / rect.width));
+        var y = Math.floor((e.clientY - rect.top) * (canvas.height / rect.height));
+        if (x < 0) x = 0; if (y < 0) y = 0;
+        if (x >= canvas.width) x = canvas.width - 1;
+        if (y >= canvas.height) y = canvas.height - 1;
+        var pixel = ctx.getImageData(x, y, 1, 1).data;
+        var hex = '#' + [pixel[0], pixel[1], pixel[2]].map(function(c){ return c.toString(16).padStart(2,'0'); }).join('');
+        document.getElementById(pickTarget).value = hex;
+        var hexInput = document.getElementById(pickTarget + 'Hex');
+        if (hexInput) hexInput.value = hex;
+        var hint = document.getElementById('logoPickerHint');
+        hint.textContent = '✓ Цвет ' + hex + ' применён к "' + pickTarget + '"';
+        hint.style.color = '#27ae60';
+        resetPickButtons();
+        pickTarget = null;
+    } catch (err) {
+        alert('Не удалось взять цвет — изображение защищено CORS. Введи код #xxxxxx вручную.');
+        console.error(err);
+    }
+}
+
+// ========== ПЕРЕКЛЮЧАТЕЛИ UI ==========
+function toggleOverlayFields() {
+    var enabled = document.getElementById('overlayPhotoEnabled').checked;
+    document.getElementById('overlayPhotoUrlWrap').style.display = enabled ? 'block' : 'none';
+}
+function toggleOverlaySource() {
+    var isLocal = document.getElementById('overlayLocal').checked;
+    document.getElementById('overlayLocalWrap').style.display = isLocal ? 'block' : 'none';
+    document.getElementById('overlayUrlWrap').style.display = isLocal ? 'none' : 'block';
+}
+function toggleOverlayTimedFields() {
+    var enabled = document.getElementById('overlayTimed').checked;
+    document.getElementById('overlayTimedWrap').style.display = enabled ? 'block' : 'none';
+}
+
 // ========== ПАРСЕР ТОВАРОВ 360 ==========
 function parseP360Products(raw) {
     if (!raw) return [];
@@ -343,7 +556,8 @@ function extractDataFromCode(code) {
         siteLink: '', tgLink: '', waLink: '', maxLink: '', instaLink: '', vkLink: '', okLink: '',
         phone1: '', phone1Link: '', bookingUrl: '', tourUrl: '',
         photos: [], galleryPhotos: [], videos: [], models: [], modelCaptions: [], modelBgUrl: '',
-        hasOurBtn: false, freeButtons: [], yandexButtons: [], headerColor: ''
+        hasOurBtn: false, freeButtons: [], yandexButtons: [],
+        headerColor: '', bgColor: '', dynBg: '', dynText: '', statBg: '', statText: '', navBg: '', navText: ''
     };
     if (!code) return data;
 
@@ -361,8 +575,44 @@ function extractDataFromCode(code) {
     var logoMeta = doc.querySelector('meta[property="og:image"]');
     data.ogImage = logoMeta ? logoMeta.content : '';
 
-    var hStyle = code.match(/\._h\s*\{[^}]*color:\s*(#[0-9a-fA-F]{3,6})/i);
-    if (hStyle) data.headerColor = hStyle[1];
+    // ===== Извлечение цветов =====
+    var bgMatch = code.match(/html\s*,\s*body\s*\{[^}]*?background(?:-color)?\s*:\s*(#[0-9a-fA-F]{3,6})/i);
+    if (!bgMatch) bgMatch = code.match(/body\s*\{[^}]*?background(?:-color)?\s*:\s*(#[0-9a-fA-F]{3,6})/i);
+    if (bgMatch) data.bgColor = bgMatch[1].toLowerCase();
+
+    var headerRule = code.match(/\._h\s*\{([^}]*)\}/i);
+    if (headerRule) {
+        var hColor = headerRule[1].match(/(?:^|;|\s)color\s*:\s*(#[0-9a-fA-F]{3,6})/i);
+        if (hColor) data.headerColor = hColor[1].toLowerCase();
+    }
+
+    var dynRule = code.match(/\._scrollButtons\s+\.btn(?![\w.-])[^{]*\{([^}]*)\}/i);
+    if (dynRule) {
+        var r = dynRule[1];
+        var bg = r.match(/background(?:-color)?\s*:\s*(#[0-9a-fA-F]{3,6})/i);
+        var col = r.match(/(?:^|;|\s)color\s*:\s*(#[0-9a-fA-F]{3,6})/i);
+        if (bg) data.dynBg = bg[1].toLowerCase();
+        if (col) data.dynText = col[1].toLowerCase();
+    }
+
+    var navRule = code.match(/\._bottomFixed\s+\.btn-static\.burgundy-btn(?![\w.-])[^{]*\{([^}]*)\}/i);
+    if (navRule) {
+        var r = navRule[1];
+        var bg = r.match(/background(?:-color)?\s*:\s*(#[0-9a-fA-F]{3,6})/i);
+        var col = r.match(/(?:^|;|\s)color\s*:\s*(#[0-9a-fA-F]{3,6})/i);
+        if (bg) data.navBg = bg[1].toLowerCase();
+        if (col) data.navText = col[1].toLowerCase();
+    }
+
+    var statRule = code.match(/\._bottomFixed\s+\.btn-static(?![\w.-])[^{]*\{([^}]*)\}/i);
+    if (!statRule) statRule = code.match(/\._map-back\s+\.btn-static(?![\w.-])[^{]*\{([^}]*)\}/i);
+    if (statRule) {
+        var r = statRule[1];
+        var bg = r.match(/background(?:-color)?\s*:\s*(#[0-9a-fA-F]{3,6})/i);
+        var col = r.match(/(?:^|;|\s)color\s*:\s*(#[0-9a-fA-F]{3,6})/i);
+        if (bg) data.statBg = bg[1].toLowerCase();
+        if (col) data.statText = col[1].toLowerCase();
+    }
 
     var mapIframe = doc.querySelector('._m1 iframe') || doc.querySelector('iframe[src*="map-widget"]');
     if (mapIframe) {
@@ -473,7 +723,16 @@ function parseAndFill() {
     if(data.name) document.getElementById('name').value = data.name;
     if(data.subtitle) document.getElementById('subtitle').value = data.subtitle;
     if(data.ogImage) document.getElementById('ogImage').value = data.ogImage;
-    if(data.headerColor) document.getElementById('headerColor').value = data.headerColor;
+
+    if(data.bgColor) { document.getElementById('bgColor').value = data.bgColor; document.getElementById('bgColorHex').value = data.bgColor; }
+    if(data.headerColor) { document.getElementById('headerColor').value = data.headerColor; document.getElementById('headerColorHex').value = data.headerColor; }
+    if(data.dynBg) { document.getElementById('dynBg').value = data.dynBg; document.getElementById('dynBgHex').value = data.dynBg; }
+    if(data.dynText) { document.getElementById('dynText').value = data.dynText; document.getElementById('dynTextHex').value = data.dynText; }
+    if(data.statBg) { document.getElementById('statBg').value = data.statBg; document.getElementById('statBgHex').value = data.statBg; }
+    if(data.statText) { document.getElementById('statText').value = data.statText; document.getElementById('statTextHex').value = data.statText; }
+    if(data.navBg) { document.getElementById('navBg').value = data.navBg; document.getElementById('navBgHex').value = data.navBg; }
+    if(data.navText) { document.getElementById('navText').value = data.navText; document.getElementById('navTextHex').value = data.navText; }
+
     if(data.mapSrc) document.getElementById('mapIframe').value = data.mapSrc;
     if(data.routeLink) document.getElementById('routeLink').value = data.routeLink;
     if(data.reviewsLink) document.getElementById('reviewsLink').value = data.reviewsLink;
@@ -525,7 +784,7 @@ function parseAndFill() {
     var delChecks = ['del_map','del_route','del_reviews','del_products','del_features','del_menu','del_news','del_phone1','del_booking','del_site','del_tg','del_wa','del_max','del_insta','del_vk','del_ok','del_tour','del_photos','del_videos','del_models'];
     delChecks.forEach(function(id){ if(document.getElementById(id)) document.getElementById(id).checked = false; });
 
-    alert('Сканирование завершено! Проверь поля и жми СГЕНЕРИРОВАТЬ.');
+    alert('Сканирование завершено! Цвета и ссылки подставлены. Проверь поля и жми СГЕНЕРИРОВАТЬ.');
 }
 
 function generate(){
@@ -575,7 +834,7 @@ function generate(){
     var tourMode = document.querySelector('input[name="tourMode"]:checked').value; if(chk('del_tour')) tourMode = 'none';
     var tourSingleUrl = val('tourSingleUrl') || parsed.tourUrl || ''; if(tourMode === 'none') tourSingleUrl = '';
 
-    // ===== ФОТО (Слайдер и 360) =====
+    // ===== ФОТО =====
     var parsedPhotos = parsed.photos || [];
     var inputPhotos = val('photos').split('\n').map(function(l){return l.trim();}).filter(function(l){return l && l.indexOf('http')===0;});
     var finalPhotos = [];
@@ -586,7 +845,7 @@ function generate(){
         finalPhotos = parsedPhotos.slice();
         inputPhotos.forEach(function(p){ if(!finalPhotos.includes(p)) finalPhotos.push(p); });
     }
-    if (finalPhotos.length === 0) finalPhotos = ["https://avatars.mds.yandex.net/get-altay/22248647/2a000001a15ead1c08c22526aa64b57f7451/XXL"];
+    if (finalPhotos.length === 0) finalPhotos = ["https://avatars.mds.yandex.net/get-altay/21116552/2a000001a14e57b3a455a7acd1a9412a90c0/XXL"];
 
     var isSpin360 = chk('spin360');
     var spinSpeed = parseFloat(val('spinSpeed')) || 0.1;
@@ -594,8 +853,23 @@ function generate(){
     var spinDelay = parseFloat(val('spinDelay')) || 1.5;
     if(spinDelay < 0) spinDelay = 0;
 
+    // ===== ОВЕРЛЕЙ =====
     var overlayEnabled = chk('overlayPhotoEnabled');
-    var overlayUrl = val('overlayPhotoUrl');
+    var overlayLocal = chk('overlayLocal');
+    var overlaySrc = '';
+    if (overlayEnabled) {
+        if (overlayLocal) {
+            overlaySrc = val('overlayLocalPath') || 'imag/0001.png';
+        } else {
+            overlaySrc = val('overlayPhotoUrl');
+        }
+    }
+    var overlayTimed = chk('overlayTimed');
+    var overlayShowSec = parseFloat(val('overlayShowSec')) || 5;
+    if(overlayShowSec < 0.5) overlayShowSec = 0.5;
+    var overlayHideSec = parseFloat(val('overlayHideSec')) || 10;
+    if(overlayHideSec < 0.5) overlayHideSec = 0.5;
+    var overlayLoop = chk('overlayLoop');
 
     // ===== ГАЛЕРЕЯ =====
     var galleryRaw = val('galleryPhotos').split('\n').map(function(l){return l.trim();}).filter(function(l){return l;});
@@ -611,6 +885,7 @@ function generate(){
     var p360Delay = parseFloat(val('p360Delay')) || 1.5;
     var p360ShowCaptions = chk('p360ShowCaptions');
     var p360ShowBuyBtn = chk('p360ShowBuyBtn');
+    var p360ButtonLabel = val('p360ButtonLabel') || 'ТОВАР 360';
 
     // ===== ВИДЕО =====
     var parsedVideos = parsed.videos || [];
@@ -652,11 +927,9 @@ function generate(){
     var modelBgEnabled = chk('modelBgEnabled');
     var modelBgUrl = val('modelBgUrl');
 
-    // Наша кнопка
     var ourBtnActive = chk('ourBtnActive') || parsed.hasOurBtn;
     if (chk('ourBtnDelete')) ourBtnActive = false;
 
-    // Свободные кнопки
     var freeButtons = [];
     for(var i=1; i<=5; i++){
         var fName = val('freeName'+i); var fUrl = val('freeUrl'+i);
@@ -667,7 +940,6 @@ function generate(){
         if(fName && fUrl) freeButtons.push({name:fName, url:fUrl});
     }
 
-    // СБОРКА КНОПОК
     var finalButtons = [];
     if(tourMode==='multi') finalButtons.push({label:'3D ТУР',onclick:'enter3DMode'});
     else if(tourMode==='single'&&tourSingleUrl) finalButtons.push({label:'3D ТУР',href:tourSingleUrl});
@@ -691,11 +963,10 @@ function generate(){
     freeButtons.forEach(function(b){ finalButtons.push({label:b.name, href:b.url}); });
     
     if (galleryItems.length > 0) finalButtons.push({label:'ФОТО',onclick:'showPhotoGallery'});
-    if (p360Products.length > 0) finalButtons.push({label:'ТОВАР 360',onclick:'showProduct360'});
+    if (p360Products.length > 0) finalButtons.push({label:p360ButtonLabel, onclick:'showProduct360'});
     if (finalVideos.length > 0) finalButtons.push({label:'ВИДЕО',onclick:'showVideo'});
     if (finalModels.length > 0) finalButtons.push({label:'3D МОДЕЛЬ',onclick:'showModel3d'});
 
-    // JS массив кнопок
     var dynJs = '[\n' + finalButtons.map(function(b) {
         var parts = [jsStr(b.label)];
         if (b.href) parts.push(jsStr(b.href)); else parts.push('null');
@@ -820,7 +1091,6 @@ function generate(){
         window.showPhotoGallery = showPhotoGallery; window.clearAllPhotos = clearAllPhotos;
     ` : `function showPhotoGallery() {} window.showPhotoGallery = showPhotoGallery; function clearAllPhotos() {} window.clearAllPhotos = clearAllPhotos;`;
 
-    // ===== ТОВАР 360 =====
     var product360Js = p360Products.length > 0 ? `
         var p360Products = ${JSON.stringify(p360Products)};
         var p360CurrentProduct = 0;
@@ -991,7 +1261,31 @@ function generate(){
     var navBg=val('navBg')||'#07372b';
     var navText=val('navText')||'#99d6cf';
 
-    var overlayHtml = overlayEnabled && overlayUrl ? `<img src="${esc(overlayUrl)}" class="slider-overlay" draggable="false">` : '';
+    // Оверлей: если локальный — путь не через esc, чтобы не портить слэши (это безопасно для нашего случая)
+    var overlayHtml = (overlayEnabled && overlaySrc) ? `<img src="${esc(overlaySrc)}" class="slider-overlay" id="overlayPhoto" draggable="false" alt="overlay">` : '';
+
+    var overlayTimedJs = '';
+    if (overlayEnabled && overlaySrc && overlayTimed) {
+        overlayTimedJs = `
+setTimeout(function() {
+    var ov = document.getElementById('overlayPhoto');
+    if (!ov) return;
+    ov.style.transition = 'opacity 0.7s ease';
+    var showMs = ${Math.round(overlayShowSec * 1000)};
+    var hideMs = ${Math.round(overlayHideSec * 1000)};
+    var loop = ${overlayLoop ? 'true' : 'false'};
+    function doHide() {
+        ov.style.opacity = '0';
+        if (loop) setTimeout(doShow, hideMs);
+    }
+    function doShow() {
+        ov.style.opacity = '1';
+        setTimeout(doHide, showMs);
+    }
+    setTimeout(doHide, showMs);
+}, 100);
+`;
+    }
 
     var p360Html = '';
     if (p360Products.length > 0) {
@@ -1305,6 +1599,8 @@ function generate(){
         ${model3dJs}
         ${photoGalleryJs}
         ${product360Js}
+        
+        ${overlayTimedJs}
         
         function buildMainSlider() {
             sliderTrack.innerHTML = '';
