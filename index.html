@@ -572,7 +572,7 @@ function extractDataFromCode(code) {
         name: '', subtitle: '', ogImage: '', mapSrc: '', routeLink: '', reviewsLink: '',
         productsLink: '', featuresLink: '', menuLink: '', newsLink: '',
         siteLink: '', tgLink: '', waLink: '', maxLink: '', instaLink: '', vkLink: '', okLink: '',
-        phone1: '', phone1Link: '', bookingUrl: '', tourUrl: '',
+        phone1: '', phone1Link: '', phone2: '', phone2Link: '', bookingUrl: '', tourUrl: '',
         photos: [], galleryPhotos: [], videos: [], models: [], modelCaptions: [], modelBgUrl: '',
         hasOurBtn: false, freeButtons: [], yandexButtons: [],
         headerColor: '', bgColor: '', dynBg: '', dynText: '', statBg: '', statText: '', navBg: '', navText: ''
@@ -661,6 +661,16 @@ function extractDataFromCode(code) {
             data.phone1 = '+7 (' + digits.slice(1, 4) + ') ' + digits.slice(4, 7) + '-' + digits.slice(7, 9) + '-' + digits.slice(9, 11);
             data.phone1Link = 'tel:+7' + digits.slice(1);
         } else { data.phone1 = rawPhone; data.phone1Link = 'tel:' + rawPhone; }
+    }
+    
+    // ДОБАВЛЯЕМ ВТОРОЙ ТЕЛЕФОН
+    if (telMatches.length > 1) {
+        var rawPhone2 = telMatches[1].replace('tel:', '');
+        var digits2 = rawPhone2.replace(/\D/g, '');
+        if (digits2.length === 11) {
+            data.phone2 = '+7 (' + digits2.slice(1, 4) + ') ' + digits2.slice(4, 7) + '-' + digits2.slice(7, 9) + '-' + digits2.slice(9, 11);
+            data.phone2Link = 'tel:+7' + digits2.slice(1);
+        } else { data.phone2 = rawPhone2; data.phone2Link = 'tel:' + rawPhone2; }
     }
 
     urls.forEach(function(url) {
@@ -778,6 +788,12 @@ function parseAndFill() {
     if(data.phone1) {
         document.getElementById('phone1').value = data.phone1;
         document.getElementById('phone1Link').value = data.phone1Link;
+    }
+    
+    // ЗАПОЛНЯЕМ ВТОРОЙ ТЕЛЕФОН
+    if(data.phone2) {
+        document.getElementById('phone2').value = data.phone2;
+        document.getElementById('phone2Link').value = data.phone2Link;
     }
 
     // ⚠️ Поле САЙТ — пустое, если реального сайта не найдено
